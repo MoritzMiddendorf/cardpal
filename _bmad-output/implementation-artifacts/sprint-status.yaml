@@ -1,0 +1,83 @@
+# generated: 2026-02-06
+# project: cardpal
+# project_key: NOKEY
+# tracking_system: file-system
+# story_location: _bmad-output/implementation-artifacts
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic not yet started
+#   - in-progress: Epic actively being worked on
+#   - done: All stories in epic completed
+#
+# Epic Status Transitions:
+#   - backlog -> in-progress: Automatically when first story is created (via create-story)
+#   - in-progress -> done: Manually when all stories reach 'done' status
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - ready-for-dev: Story file created in stories folder
+#   - in-progress: Developer actively working on implementation
+#   - review: Ready for code review (via Dev's code-review workflow)
+#   - done: Story completed
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - done: Retrospective has been completed
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epic transitions to 'in-progress' automatically when first story is created
+# - Stories can be worked in parallel if team capacity allows
+# - SM typically creates next story after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', then runs code-review (fresh context, different LLM recommended)
+
+generated: 2026-02-06
+project: cardpal
+project_key: NOKEY
+tracking_system: file-system
+story_location: _bmad-output/implementation-artifacts
+
+development_status:
+  # Epic 1: Foundation & Authentication
+  epic-1: in-progress
+  1-1-project-scaffolding-and-shared-types: done
+  1-2-otp-generation-system: backlog
+  1-3-otp-entry-and-validation: backlog
+  1-4-username-entry-and-session-establishment: backlog
+  epic-1-retrospective: optional
+
+  # Epic 2: Lobby & Room Management
+  epic-2: backlog
+  2-1-lobby-screen-and-room-listing: backlog
+  2-2-room-creation: backlog
+  2-3-join-and-leave-room: backlog
+  2-4-room-screen-and-player-list: backlog
+  epic-2-retrospective: optional
+
+  # Epic 3: Game Engine & Blackjack
+  epic-3: backlog
+  3-1-game-engine-interface-and-shared-types: backlog
+  3-2-game-session-control: backlog
+  3-3-blackjack-core-rules-and-state: backlog
+  3-4-blackjack-turn-flow-and-actions: backlog
+  3-5-card-visibility-and-game-ui: backlog
+  3-6-game-end-and-results: backlog
+  epic-3-retrospective: optional
+
+  # Epic 4: Visual Feedback & Connection Resilience
+  epic-4: backlog
+  4-1-card-movement-animations: backlog
+  4-2-connection-status-display: backlog
+  4-3-disconnect-detection-and-game-pause: backlog
+  4-4-reconnection-and-state-restoration: backlog
+  epic-4-retrospective: optional
+
+  # Epic 5: Skip-Bo Implementation
+  epic-5: backlog
+  5-1-skip-bo-game-rules-and-state: backlog
+  5-2-skip-bo-turn-flow-and-actions: backlog
+  5-3-skip-bo-ui-and-playfield-layout: backlog
+  5-4-skip-bo-win-condition: backlog
+  epic-5-retrospective: optional
