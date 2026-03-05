@@ -1,0 +1,112 @@
+.skipbo-card {
+  width: 64px;
+  height: 96px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 2px solid #0f3460;
+  cursor: default;
+  transition: transform 0.15s, box-shadow 0.15s;
+  user-select: none;
+}
+
+.skipbo-card-face {
+  background: #fff;
+}
+
+.skipbo-card-back {
+  background: #0f3460;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 6px,
+    rgba(255, 255, 255, 0.05) 6px,
+    rgba(255, 255, 255, 0.05) 12px
+  );
+}
+
+.skipbo-card-empty {
+  background: transparent;
+  border-style: dashed;
+  border-color: #0f3460;
+}
+
+/* Color ranges */
+.skipbo-card-blue {
+  color: #2980b9;
+  border-color: #2980b9;
+}
+
+.skipbo-card-green {
+  color: #27ae60;
+  border-color: #27ae60;
+}
+
+.skipbo-card-orange {
+  color: #d35400;
+  border-color: #d35400;
+}
+
+.skipbo-card-red {
+  color: #c0392b;
+  border-color: #c0392b;
+}
+
+.skipbo-card-wild {
+  color: #8e44ad;
+  border-color: #8e44ad;
+  background: linear-gradient(135deg, #fff 0%, #f3e5f5 100%);
+}
+
+.skipbo-card-value {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.skipbo-card-label {
+  font-size: 0.75rem;
+  line-height: 1.2;
+  letter-spacing: 0.05em;
+}
+
+/* Interactive states */
+.skipbo-card-highlighted {
+  box-shadow: 0 0 10px rgba(46, 204, 113, 0.6), 0 0 20px rgba(46, 204, 113, 0.3);
+  border-color: #2ecc71;
+  cursor: pointer;
+}
+
+.skipbo-card-selected {
+  transform: translateY(-6px);
+  box-shadow: 0 0 12px rgba(233, 69, 96, 0.6), 0 0 24px rgba(233, 69, 96, 0.3);
+  border-color: #e94560;
+  cursor: pointer;
+}
+
+.skipbo-card-highlighted:hover {
+  transform: translateY(-2px);
+}
+
+.skipbo-card-selected:hover {
+  transform: translateY(-8px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipbo-card {
+    transition: none;
+  }
+
+  .skipbo-card-selected {
+    transform: none;
+    border-width: 3px;
+  }
+
+  .skipbo-card-highlighted:hover,
+  .skipbo-card-selected:hover {
+    transform: none;
+  }
+}

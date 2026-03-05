@@ -22,5 +22,5 @@
 # The cardgames itself should look simple, but small animations (for example for laying down a card) would be cool
 # Playfield should support private cards (cards in hand only visible to the user), different playfield layouts, layered cards, flipped cards and everything else neccessary to support a wide range of cardgames
 # To test the webapp, we will first add the classic and simple game blackjack
-# The expected peak usercount is <10 and we have to find a host for the server. Ideally,
-since the demands are low and (almost?) no data persistence is needed, it should be free.
+# The expected peak usercount is <10 (that part is very important, for now only friends will use the webapp) and we have to find a host for the server. Ideally,
+since the demands are low and (almost?) no data persistence is needed, it should be free. 

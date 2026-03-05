@@ -1,7 +1,7 @@
 ---
 name: 'create-excalidraw-wireframe'
 description: 'Create website or app wireframes in Excalidraw format'
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 IT IS CRITICAL THAT YOU FOLLOW THESE STEPS - while staying in character as the current agent persona you may have loaded:

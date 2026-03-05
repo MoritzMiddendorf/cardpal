@@ -1,0 +1,46 @@
+.card {
+  width: 80px;
+  height: 120px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  border: 1px solid #0f3460;
+}
+
+.card-face {
+  background: #fff;
+  gap: 2px;
+}
+
+.card-back {
+  background: #0f3460;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 8px,
+    rgba(255, 255, 255, 0.05) 8px,
+    rgba(255, 255, 255, 0.05) 16px
+  );
+}
+
+.card-red {
+  color: #e94560;
+}
+
+.card-black {
+  color: #1a1a2e;
+}
+
+.card-rank {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.card-suit {
+  font-size: 1.5rem;
+  line-height: 1;
+}

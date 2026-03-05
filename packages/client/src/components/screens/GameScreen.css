@@ -1,0 +1,308 @@
+.game-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0e1a;
+  color: #eaeaea;
+  padding: 1.5rem;
+  gap: 1.5rem;
+}
+
+.game-dealer-area,
+.game-player-area,
+.game-my-area {
+  padding: 1rem 1.25rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+}
+
+.game-player-active {
+  border-color: #e94560;
+  box-shadow: 0 0 8px rgba(233, 69, 96, 0.3);
+}
+
+.game-player-bust {
+  opacity: 0.6;
+}
+
+.game-player-stood {
+  opacity: 0.8;
+}
+
+.game-my-area {
+  border-width: 2px;
+  background: #1a2744;
+}
+
+.game-area-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.game-hand-value {
+  margin-left: auto;
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: #aaa;
+}
+
+.game-bust-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e94560;
+  background: rgba(233, 69, 96, 0.15);
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
+
+.game-stood-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #aaa;
+  background: rgba(170, 170, 170, 0.15);
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
+
+.game-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.game-hit-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: #e94560;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.game-hit-btn:hover:not(:disabled) {
+  background: #d13350;
+}
+
+.game-hit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.game-stand-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: transparent;
+  color: #eaeaea;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.game-stand-btn:hover:not(:disabled) {
+  background: #16213e;
+}
+
+.game-stand-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Results overlay */
+.game-results {
+  padding: 1.5rem;
+  background: #1a2744;
+  border: 2px solid #e94560;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.game-results-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: #e94560;
+}
+
+.game-results-dealer {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #aaa;
+  margin-bottom: 0.75rem;
+}
+
+.game-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.game-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: #16213e;
+}
+
+.game-result-name {
+  font-weight: 600;
+}
+
+.game-result-badge {
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.125rem 0.75rem;
+  border-radius: 4px;
+}
+
+.game-result-win .game-result-badge {
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.15);
+}
+
+.game-result-lose .game-result-badge {
+  color: #e94560;
+  background: rgba(233, 69, 96, 0.15);
+}
+
+.game-result-push .game-result-badge {
+  color: #f1c40f;
+  background: rgba(241, 196, 15, 0.15);
+}
+
+.game-result-value {
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+.game-results-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.game-play-again-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: #e94560;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.game-play-again-btn:hover {
+  background: #d13350;
+}
+
+.game-return-lobby-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: transparent;
+  color: #eaeaea;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.game-return-lobby-btn:hover {
+  background: #16213e;
+}
+
+/* Inline result badges next to player names */
+.game-result-inline {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
+
+.game-result-inline.game-result-win {
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.15);
+}
+
+.game-result-inline.game-result-lose {
+  color: #e94560;
+  background: rgba(233, 69, 96, 0.15);
+}
+
+.game-result-inline.game-result-push {
+  color: #f1c40f;
+  background: rgba(241, 196, 15, 0.15);
+}
+
+/* Pause banner */
+.game-paused-banner {
+  padding: 0.75rem 1rem;
+  background: rgba(233, 69, 96, 0.2);
+  border: 1px solid #e94560;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.game-paused-text {
+  color: #e94560;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  animation: game-pause-pulse 2s ease-in-out infinite;
+}
+
+@keyframes game-pause-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-paused-text {
+    animation: none;
+  }
+}
+
+/* Connection status dot */
+.game-player-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e67e22;
+  flex-shrink: 0;
+}
+
+.game-player-status-dot-connected {
+  background: #2ecc71;
+}
+
+.game-player-area.game-player-disconnected {
+  opacity: 0.5;
+}
+
+.card-pile {
+  display: flex;
+}
+
+.card-pile .animated-card + .animated-card {
+  margin-left: -40px;
+}
+
+.card-pile .card + .card {
+  margin-left: -40px;
+}

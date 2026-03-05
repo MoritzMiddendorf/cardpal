@@ -8,14 +8,17 @@ export interface ClientToServerEvents {
   createRoom: (data: { gameType: GameType }) => void;
   joinRoom: (data: { roomId: string }) => void;
   leaveRoom: () => void;
+  changeGameType: (data: { gameType: GameType }) => void;
   startGame: () => void;
   gameAction: (action: GameAction) => void;
+  playAgain: () => void;
+  returnToLobby: () => void;
 }
 
 export interface ServerToClientEvents {
-  authenticated: (session: { token: string; username: string }) => void;
+  authenticated: (session: { token: string; username: string; roomId?: string }) => void;
   lobbyState: (data: { rooms: RoomInfo[] }) => void;
   roomState: (room: RoomState) => void;
-  gameState: (state: FilteredGameState) => void;
+  gameState: (state: FilteredGameState | null) => void;
   error: (error: ErrorPayload) => void;
 }

@@ -1,6 +1,6 @@
 ---
 description: 'Cynically review content and produce findings'
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Adversarial Review (General)

@@ -6,6 +6,7 @@ export type ErrorCode =
   | 'ROOM_NOT_FOUND'
   | 'NOT_AUTHORIZED'
   | 'GAME_IN_PROGRESS'
+  | 'GAME_PAUSED'
   | 'UNKNOWN_ERROR';
 
 export interface ErrorPayload {

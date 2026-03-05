@@ -1,6 +1,6 @@
 ---
 description: 'Clinical copy-editor that reviews text for communication issues'
-disable-model-invocation: true
+disable-model-invocation: false
 ---
 
 # Editorial Review - Prose

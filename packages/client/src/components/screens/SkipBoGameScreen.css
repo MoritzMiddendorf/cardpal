@@ -1,0 +1,330 @@
+.skipbo-game {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0e1a;
+  color: #eaeaea;
+  padding: 1rem;
+  gap: 1rem;
+}
+
+/* Turn banner */
+.skipbo-turn-banner {
+  text-align: center;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.5rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  color: #aaa;
+}
+
+.skipbo-turn-mine {
+  color: #e94560;
+  border-color: #e94560;
+  background: rgba(233, 69, 96, 0.1);
+}
+
+/* Other players */
+.skipbo-other-players {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.skipbo-opponent {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.75rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+}
+
+.skipbo-opponent-active {
+  border-color: #e94560;
+  box-shadow: 0 0 8px rgba(233, 69, 96, 0.3);
+}
+
+.skipbo-opponent-disconnected {
+  opacity: 0.5;
+}
+
+.skipbo-opponent-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.skipbo-opponent-name {
+  flex: 1;
+}
+
+.skipbo-opponent-hand-count {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+.skipbo-opponent-piles {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.skipbo-opponent-hand-backs {
+  display: flex;
+  gap: 0;
+}
+
+.skipbo-opponent-hand-backs .skipbo-card {
+  width: 36px;
+  height: 52px;
+  font-size: 0.5rem;
+}
+
+.skipbo-opponent-hand-backs .skipbo-card + .skipbo-card {
+  margin-left: -16px;
+}
+
+.skipbo-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e67e22;
+  flex-shrink: 0;
+}
+
+.skipbo-status-dot-connected {
+  background: #2ecc71;
+}
+
+/* Center building piles */
+.skipbo-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+}
+
+.skipbo-building-piles {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+
+.skipbo-draw-info {
+  font-size: 0.75rem;
+  color: #aaa;
+}
+
+/* My area */
+.skipbo-my-area {
+  padding: 1rem;
+  background: #1a2744;
+  border: 2px solid #0f3460;
+  border-radius: 8px;
+}
+
+.skipbo-my-area-active {
+  border-color: #e94560;
+  box-shadow: 0 0 8px rgba(233, 69, 96, 0.3);
+}
+
+.skipbo-my-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.skipbo-my-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.skipbo-my-stock {
+  position: relative;
+  cursor: pointer;
+}
+
+.skipbo-my-hand {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.skipbo-my-discards {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.skipbo-my-discard-slot {
+  position: relative;
+}
+
+.skipbo-selection-indicator {
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 8px;
+  height: 8px;
+  background: #e94560;
+  border-radius: 50%;
+}
+
+/* Results overlay */
+.skipbo-results {
+  padding: 1.5rem;
+  background: #1a2744;
+  border: 2px solid #e94560;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.skipbo-results-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: #e94560;
+}
+
+.skipbo-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.skipbo-result-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  background: #16213e;
+}
+
+.skipbo-result-name {
+  font-weight: 600;
+}
+
+.skipbo-result-badge {
+  font-size: 0.875rem;
+  font-weight: 700;
+  padding: 0.125rem 0.75rem;
+  border-radius: 4px;
+}
+
+.skipbo-result-win .skipbo-result-badge {
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.15);
+}
+
+.skipbo-result-lose .skipbo-result-badge {
+  color: #e94560;
+  background: rgba(233, 69, 96, 0.15);
+}
+
+.skipbo-result-stock {
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+.skipbo-results-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.skipbo-play-again-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: #e94560;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.skipbo-play-again-btn:hover {
+  background: #d13350;
+}
+
+.skipbo-return-lobby-btn {
+  padding: 0.75rem 1.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: transparent;
+  color: #eaeaea;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.skipbo-return-lobby-btn:hover {
+  background: #16213e;
+}
+
+/* Inline result badge */
+.skipbo-result-inline {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
+
+.skipbo-result-inline.skipbo-result-win {
+  color: #2ecc71;
+  background: rgba(46, 204, 113, 0.15);
+}
+
+.skipbo-result-inline.skipbo-result-lose {
+  color: #e94560;
+  background: rgba(233, 69, 96, 0.15);
+}
+
+/* Pause banner */
+.skipbo-paused-banner {
+  padding: 0.75rem 1rem;
+  background: rgba(233, 69, 96, 0.2);
+  border: 1px solid #e94560;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.skipbo-paused-text {
+  color: #e94560;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  animation: skipbo-pause-pulse 2s ease-in-out infinite;
+}
+
+@keyframes skipbo-pause-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipbo-paused-text {
+    animation: none;
+  }
+}

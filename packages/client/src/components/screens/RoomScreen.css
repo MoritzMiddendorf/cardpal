@@ -1,0 +1,172 @@
+.room-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0e1a;
+  color: #eaeaea;
+  padding: 1.5rem;
+}
+
+.room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #0f3460;
+}
+
+.room-header-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.room-name {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.room-game-type {
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+.room-game-selector {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.5rem;
+  background: #16213e;
+  color: #eaeaea;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.room-player-count {
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+.room-player-count-valid {
+  color: #4caf50;
+}
+
+.room-player-count-invalid {
+  color: #e94560;
+}
+
+.room-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-top: 1.5rem;
+}
+
+.room-player-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.room-player-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+}
+
+.room-player-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.room-player-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #555;
+  flex-shrink: 0;
+}
+
+.room-player-dot-connected {
+  background: #4caf50;
+}
+
+.room-player-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.room-player-owner {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #e94560;
+  background: rgba(233, 69, 96, 0.15);
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+}
+
+.room-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #0f3460;
+  margin-top: 1.5rem;
+}
+
+.room-start-btn {
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: #e94560;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.room-start-btn:hover:not(:disabled) {
+  background: #d13350;
+}
+
+.room-start-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.room-leave-btn {
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: transparent;
+  color: #aaa;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.room-leave-btn:hover:not(:disabled) {
+  background: #16213e;
+  color: #eaeaea;
+}
+
+.room-leave-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.room-waiting {
+  text-align: center;
+  color: #aaa;
+  font-size: 0.9375rem;
+  margin: 0;
+}

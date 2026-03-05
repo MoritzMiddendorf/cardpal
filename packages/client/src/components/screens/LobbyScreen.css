@@ -1,0 +1,205 @@
+.lobby-screen {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background: #0a0e1a;
+  color: #eaeaea;
+  padding: 1.5rem;
+}
+
+.lobby-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #0f3460;
+}
+
+.lobby-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.lobby-username {
+  font-size: 1rem;
+  color: #aaa;
+}
+
+.lobby-content {
+  flex: 1;
+  padding-top: 1.5rem;
+}
+
+.lobby-rooms-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.lobby-rooms-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.lobby-create-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: #e94560;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.lobby-create-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lobby-cancel-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: transparent;
+  color: #aaa;
+  border: 1px solid #0f3460;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.lobby-cancel-btn:hover:not(:disabled) {
+  background: #16213e;
+  color: #eaeaea;
+}
+
+.lobby-cancel-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lobby-game-picker {
+  margin-bottom: 1.5rem;
+  padding: 1rem 1.25rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+}
+
+.lobby-picker-label {
+  margin: 0 0 0.75rem;
+  font-size: 0.9375rem;
+  color: #aaa;
+}
+
+.lobby-picker-options {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.lobby-picker-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  background: #0f3460;
+  color: #eaeaea;
+  border: 1px solid #1a4a7a;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.lobby-picker-btn:hover:not(:disabled) {
+  background: #1a4a7a;
+  border-color: #e94560;
+}
+
+.lobby-picker-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lobby-picker-error {
+  margin: 0.5rem 0 0;
+  color: #e94560;
+  font-size: 0.875rem;
+}
+
+.lobby-empty {
+  text-align: center;
+  color: #888;
+  margin-top: 3rem;
+  font-size: 1rem;
+}
+
+.lobby-room-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lobby-room-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.25rem;
+  background: #16213e;
+  border: 1px solid #0f3460;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.lobby-room-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.lobby-room-name {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.lobby-room-type {
+  font-size: 0.8125rem;
+  color: #aaa;
+}
+
+.lobby-room-joinable {
+  cursor: pointer;
+}
+
+.lobby-room-joinable:hover {
+  background: #1a2a4a;
+  border-color: #1a4a7a;
+}
+
+.lobby-room-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.lobby-room-status {
+  color: #e94560;
+  font-weight: 600;
+}
+
+.lobby-room-players {
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+.lobby-join-error {
+  margin: 0.75rem 0 0;
+  color: #e94560;
+  font-size: 0.875rem;
+  text-align: center;
+}

@@ -1,0 +1,30 @@
+.connection-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.connection-overlay-text {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 600;
+  animation: connection-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes connection-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .connection-overlay-text {
+    animation: none;
+  }
+}

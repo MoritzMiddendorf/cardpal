@@ -1,0 +1,42 @@
+.animated-card {}
+
+/* New card deal animation - slides down and fades in */
+.card-entering {
+  animation: card-deal 400ms ease-out forwards;
+}
+
+@keyframes card-deal {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Card flip reveal animation for dealer */
+.card-reveal {
+  animation: card-flip 500ms ease-in-out forwards;
+}
+
+@keyframes card-flip {
+  0% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* Respect user preference for reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .card-entering,
+  .card-reveal {
+    animation: none;
+  }
+}

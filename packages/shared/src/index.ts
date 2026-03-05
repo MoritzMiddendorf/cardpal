@@ -10,11 +10,23 @@ export type { ErrorCode, ErrorPayload } from './types/errors.js';
 
 export {
   GameType,
+  type Suit,
+  type Rank,
   type Card,
   type GameAction,
   type GameState,
+  type PlayerPublicInfo,
+  type OtherPlayerHand,
   type PlayerGameState,
   type FilteredGameState,
+  type GameResult,
+  type PlayerResult,
+  type SkipBoCard,
+  type SkipBoPile,
+  type SkipBoPlayerState,
+  type SkipBoGameState,
+  type FilteredSkipBoState,
+  type PileInfo,
 } from './types/game.js';
 
 export type {
@@ -43,10 +55,22 @@ export {
 
 export {
   gameTypeSchema,
+  gameStatusSchema,
+  suitSchema,
+  rankSchema,
   cardSchema,
   gameActionSchema,
   gameStateSchema,
+  playerPublicInfoSchema,
+  otherPlayerHandSchema,
   playerGameStateSchema,
+  gameResultSchema,
+  playerResultSchema,
+  skipBoCardSchema,
+  skipBoPileSchema,
+  skipBoPlayerStateSchema,
+  skipBoGameStateSchema,
+  filteredSkipBoStateSchema,
 } from './schemas/game.js';
 
 export {
