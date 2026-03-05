@@ -80,7 +80,7 @@ app.post('/api/validate-otp', (req, res) => {
 if (process.env['NODE_ENV'] === 'production') {
   const clientDist = path.resolve(__dirname, '../../client/dist');
   app.use(express.static(clientDist));
-  app.get('*', (_req, res) => {
+  app.get('/{*splat}', (_req, res) => {
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
