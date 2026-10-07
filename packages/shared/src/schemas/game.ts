@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { GameType } from '../types/game.js';
 
-export const gameTypeSchema = z.nativeEnum(GameType);
+export const gameTypeSchema = z.enum(GameType);
 
 export const suitSchema = z.enum(['hearts', 'diamonds', 'clubs', 'spades']);
 
@@ -16,7 +16,7 @@ export const cardSchema = z.object({
 export const gameActionSchema = z.object({
   type: z.string(),
   playerId: z.string(),
-  payload: z.record(z.unknown()).optional(),
+  payload: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const gameStatusSchema = z.enum(['waiting', 'playing', 'finished']);

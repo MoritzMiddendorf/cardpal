@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAppStore } from '../../store/index.js';
 import { socket } from '../../socket/client.js';
+import { RemoveDisconnectedPlayers } from '../ui/RemoveDisconnectedPlayers.js';
 import { SkipBoCard } from '../ui/SkipBoCard.js';
 import { SkipBoPile } from '../ui/SkipBoPile.js';
 import {
@@ -24,7 +25,7 @@ function resultLabel(result: PlayerResult['result']): string {
 export function SkipBoGameScreen() {
   const gameState = useAppStore((s) => s.gameState) as FilteredGameState;
   const currentRoom = useAppStore((s) => s.currentRoom);
-  const sessionToken = useAppStore((s) => s.sessionToken);
+  const playerId = useAppStore((s) => s.playerId);
 
   const [selectedSource, setSelectedSource] = useState<SourceSelection | null>(null);
 
@@ -40,7 +41,7 @@ export function SkipBoGameScreen() {
   } = gameState;
 
   const isFinished = status === 'finished';
-  const isOwner = currentRoom?.ownerId === sessionToken;
+  const isOwner = currentRoom?.ownerId === playerId;
   const isMyTurn = validActions.length > 0 && !isFinished && !isPaused;
   const myInfo = players.find((p) => p.id === myPlayerId);
   const myResult = results?.find((r: PlayerResult) => r.playerId === myPlayerId);
@@ -189,10 +190,11 @@ export function SkipBoGameScreen() {
 
       {/* Pause Banner */}
       {isPaused && pausedForPlayer && (
-        <div className="skipbo-paused-banner">
+        <div className="skipbo-paused-banner" onClick={(e) => e.stopPropagation()}>
           <span className="skipbo-paused-text">
             Game paused — waiting for {pausedForPlayer} to reconnect...
           </span>
+          {isOwner && <RemoveDisconnectedPlayers players={players} />}
         </div>
       )}
 

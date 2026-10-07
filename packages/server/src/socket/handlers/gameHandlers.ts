@@ -1,13 +1,13 @@
 import { gameTypeSchema, gameActionSchema, GameType } from '@cardpal/shared';
 import type { GameAction } from '@cardpal/shared';
 import { getRoomById, toRoomState, GAME_MIN_PLAYERS, GAME_MAX_PLAYERS, updateRoomGameType, setRoomStatus } from '../../state/rooms.js';
-import { getSessionByToken } from '../../state/sessions.js';
-import { createGame, removeGame, getGame, updateGameState } from '../../state/games.js';
+import { getSessionByPlayerId } from '../../state/sessions.js';
+import { createGame, removeGame, getGame, updateGameState, setPaused } from '../../state/games.js';
 import { getEngine } from '../../games/engine.js';
-import type { GameInstance } from '../../games/engine.js';
 import { filterGameState } from '../../utils/filterGameState.js';
 import { broadcastLobbyState } from './lobbyHandlers.js';
 import type { AppSocket, AppServer } from '../types.js';
+import { safeHandler } from '../safeHandler.js';
 
 export function handleChangeGameType(
   socket: AppSocket,
@@ -20,7 +20,7 @@ export function handleChangeGameType(
     return;
   }
 
-  const result = gameTypeSchema.safeParse(data.gameType);
+  const result = gameTypeSchema.safeParse(data?.gameType);
   if (!result.success) {
     socket.emit('error', { code: 'VALIDATION_ERROR', message: 'Invalid game type' });
     return;
@@ -37,7 +37,7 @@ export function handleChangeGameType(
     return;
   }
 
-  if (room.ownerId !== session.token) {
+  if (room.ownerId !== session.playerId) {
     socket.emit('error', { code: 'NOT_AUTHORIZED', message: 'Only the room owner can change the game type' });
     return;
   }
@@ -55,21 +55,38 @@ export function handleChangeGameType(
 }
 
 /**
+ * Pause the game while the player whose turn it is is disconnected, and resume
+ * it once they are back. Derived from current state so that it also covers the
+ * turn passing *to* an already-disconnected player (not just disconnects that
+ * happen mid-turn).
+ */
+export function syncPauseState(roomId: string): void {
+  const instance = getGame(roomId);
+  const room = getRoomById(roomId);
+  if (!instance || !room) return;
+  const activePlayerId = instance.state.players[instance.state.currentPlayerIndex] ?? null;
+  const activePlayer = room.players.find((p) => p.id === activePlayerId);
+  const shouldPause = instance.state.status === 'playing' && activePlayer !== undefined && !activePlayer.isConnected;
+  if (shouldPause && (!instance.isPaused || instance.pausedForPlayerId !== activePlayerId)) {
+    setPaused(roomId, true, activePlayerId);
+  } else if (!shouldPause && instance.isPaused) {
+    setPaused(roomId, false, null);
+  }
+}
+
+/**
  * Broadcast filtered game state to each player in the room individually.
  * Each player receives only their own hand and valid actions.
- * Accepts an optional pre-fetched GameInstance to avoid redundant deep copies.
  */
-export function broadcastGameState(roomId: string, io: AppServer, existingInstance?: GameInstance | null): void {
-  const instance = existingInstance ?? getGame(roomId);
+export function broadcastGameState(roomId: string, io: AppServer): void {
+  syncPauseState(roomId);
+  const instance = getGame(roomId);
   const room = getRoomById(roomId);
   if (!instance || !room) return;
   const connectionMap = new Map(room.players.map((p) => [p.id, p.isConnected]));
-  // Always read fresh pause state from store to avoid stale existingInstance data
-  const freshGame = existingInstance ? getGame(roomId) : null;
-  const pauseSource = freshGame ?? instance;
-  const pauseInfo = { isPaused: pauseSource.isPaused, pausedForPlayerId: pauseSource.pausedForPlayerId };
+  const pauseInfo = { isPaused: instance.isPaused, pausedForPlayerId: instance.pausedForPlayerId };
   for (const player of room.players) {
-    const playerSession = getSessionByToken(player.id);
+    const playerSession = getSessionByPlayerId(player.id);
     if (playerSession?.socketId) {
       io.to(playerSession.socketId).emit('gameState', filterGameState(instance, player.id, connectionMap, pauseInfo));
     }
@@ -97,7 +114,7 @@ export function handleStartGame(
     return;
   }
 
-  if (room.ownerId !== session.token) {
+  if (room.ownerId !== session.playerId) {
     socket.emit('error', { code: 'NOT_AUTHORIZED', message: 'Only the room owner can start the game' });
     return;
   }
@@ -161,7 +178,7 @@ export function handleGameAction(
   }
 
   // Server-authoritative: override playerId to prevent spoofing
-  const serverAction: GameAction = { ...parsed.data, playerId: session.token };
+  const serverAction: GameAction = { ...parsed.data, playerId: session.playerId };
 
   const instance = getGame(session.roomId);
   if (!instance) {
@@ -176,8 +193,8 @@ export function handleGameAction(
 
   try {
     const newState = instance.engine.applyAction(instance.state, serverAction);
-    const updatedInstance = updateGameState(session.roomId, newState);
-    broadcastGameState(session.roomId, io, updatedInstance);
+    updateGameState(session.roomId, newState);
+    broadcastGameState(session.roomId, io);
   } catch (err) {
     socket.emit('error', {
       code: 'INVALID_ACTION',
@@ -211,7 +228,7 @@ export function handlePlayAgain(
     return;
   }
 
-  if (room.ownerId !== session.token) {
+  if (room.ownerId !== session.playerId) {
     socket.emit('error', { code: 'NOT_AUTHORIZED', message: 'Only the room owner can start a new game' });
     return;
   }
@@ -278,9 +295,9 @@ export function handleEndGame(roomId: string, io: AppServer): void {
 }
 
 export function registerGameHandlers(socket: AppSocket, io: AppServer): void {
-  socket.on('changeGameType', (data) => handleChangeGameType(socket, io, data));
-  socket.on('startGame', () => handleStartGame(socket, io));
-  socket.on('gameAction', (action) => handleGameAction(socket, io, action));
-  socket.on('playAgain', () => handlePlayAgain(socket, io));
-  socket.on('returnToLobby', () => handleReturnToLobby(socket, io));
+  socket.on('changeGameType', safeHandler(socket, 'changeGameType', (data) => handleChangeGameType(socket, io, data)));
+  socket.on('startGame', safeHandler(socket, 'startGame', () => handleStartGame(socket, io)));
+  socket.on('gameAction', safeHandler(socket, 'gameAction', (action) => handleGameAction(socket, io, action)));
+  socket.on('playAgain', safeHandler(socket, 'playAgain', () => handlePlayAgain(socket, io)));
+  socket.on('returnToLobby', safeHandler(socket, 'returnToLobby', () => handleReturnToLobby(socket, io)));
 }

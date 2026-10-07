@@ -123,7 +123,7 @@ describe('handleCreateRoom', () => {
     expect(roomStateCall![1]).toHaveProperty('name');
     expect(roomStateCall![1].gameType).toBe('blackjack');
     expect(roomStateCall![1].status).toBe('lobby');
-    expect(roomStateCall![1].ownerId).toBe(session.token);
+    expect(roomStateCall![1].ownerId).toBe(session.playerId);
     expect(roomStateCall![1].players).toHaveLength(1);
     expect(roomStateCall![1].players[0].isOwner).toBe(true);
 
@@ -391,7 +391,7 @@ describe('handleLeaveRoom', () => {
     _addRoomForTest(makeRoom({
       players: [
         { id: 'owner-token', username: 'Alice', isConnected: true },
-        { id: session.token, username: 'Bob', isConnected: true },
+        { id: session.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
@@ -435,9 +435,9 @@ describe('handleLeaveRoom', () => {
     const ownerSession = createSession(pending.id, 'Alice', 'socket-1');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
         { id: 'player-2', username: 'Bob', isConnected: true },
       ],
     }));
@@ -463,8 +463,8 @@ describe('handleLeaveRoom', () => {
     const session = createSession(pending.id, 'Alice', 'socket-1');
 
     _addRoomForTest(makeRoom({
-      ownerId: session.token,
-      players: [{ id: session.token, username: 'Alice', isConnected: true }],
+      ownerId: session.playerId,
+      players: [{ id: session.playerId, username: 'Alice', isConnected: true }],
     }));
 
     const socket = createMockSocket(

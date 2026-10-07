@@ -914,3 +914,56 @@ describe('win condition in applyAction', () => {
     expect(result.buildingPiles[0]).toHaveLength(0);
   });
 });
+
+// =======================================================================
+// Robustness: payload key order, stuck turns, stalemate
+// =======================================================================
+
+describe('skipBoEngine robustness', () => {
+  it('accepts a valid action regardless of payload key order', () => {
+    const state = createTestState();
+    const next = skipBoEngine.applyAction(state, {
+      type: PLAY_FROM_HAND,
+      playerId: 'player-1',
+      payload: { buildingPileIndex: 0, handIndex: 0 },
+    });
+    expect(next.buildingPiles[0]).toHaveLength(1);
+  });
+
+  it('skips a player who has no possible move once the draw pile is empty', () => {
+    const state = createTestState({
+      players: ['player-1', 'player-2', 'player-3'],
+      drawPile: [],
+      playerStates: [
+        { ...createTestState().playerStates[0]!, hand: [numbered(9)] },
+        // player-2: empty hand, nothing playable from stock -> must be skipped
+        { playerId: 'player-2', stockPile: [numbered(12)], hand: [], discardPiles: [[], [], [], []] },
+        { playerId: 'player-3', stockPile: [numbered(12)], hand: [numbered(11)], discardPiles: [[], [], [], []] },
+      ],
+    });
+    const next = skipBoEngine.applyAction(state, {
+      type: DISCARD,
+      playerId: 'player-1',
+      payload: { handIndex: 0, discardPileIndex: 0 },
+    });
+    expect(next.status).toBe('playing');
+    expect(next.players[next.currentPlayerIndex]).toBe('player-3');
+  });
+
+  it('ends in a stalemate when nobody can move, awarding the smallest stock pile', () => {
+    const state = createTestState({
+      drawPile: [],
+      playerStates: [
+        { playerId: 'player-1', stockPile: [numbered(12), numbered(12)], hand: [numbered(9)], discardPiles: [[], [], [], []] },
+        { playerId: 'player-2', stockPile: [numbered(12)], hand: [], discardPiles: [[], [], [], []] },
+      ],
+    });
+    const next = skipBoEngine.applyAction(state, {
+      type: DISCARD,
+      playerId: 'player-1',
+      payload: { handIndex: 0, discardPileIndex: 0 },
+    });
+    expect(next.status).toBe('finished');
+    expect(skipBoEngine.getWinner(next)).toBe('player-2');
+  });
+});

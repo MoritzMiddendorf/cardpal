@@ -180,6 +180,7 @@ describe('handleAuthenticate', () => {
 
     expect(socket.emit).toHaveBeenCalledWith('authenticated', {
       token: session.token,
+      playerId: session.playerId,
       username: 'Bob',
     });
     expect(socket.data.session).toBeDefined();
@@ -265,6 +266,7 @@ describe('registerAuthHandlers', () => {
 
     expect(socket.emit).toHaveBeenCalledWith('authenticated', {
       token: session.token,
+      playerId: session.playerId,
       username: 'Alice',
     });
 
@@ -302,8 +304,8 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
     updateSessionRoomId(session.token, 'room-1');
 
     _addRoomForTest(makeRoom({
-      players: [{ id: session.token, username: 'Bob', isConnected: false }],
-      ownerId: session.token,
+      players: [{ id: session.playerId, username: 'Bob', isConnected: false }],
+      ownerId: session.playerId,
     }));
 
     const socket = createMockSocket({}, 'new-socket');
@@ -326,8 +328,8 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
     updateSessionRoomId(session.token, 'room-1');
 
     _addRoomForTest(makeRoom({
-      players: [{ id: session.token, username: 'Bob', isConnected: false }],
-      ownerId: session.token,
+      players: [{ id: session.playerId, username: 'Bob', isConnected: false }],
+      ownerId: session.playerId,
     }));
 
     const socket = createMockSocket({}, 'new-socket');
@@ -340,7 +342,7 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
     expect(io._roomEmit).toHaveBeenCalledWith('roomState', expect.objectContaining({
       id: 'room-1',
       players: expect.arrayContaining([
-        expect.objectContaining({ id: session.token, isConnected: true }),
+        expect.objectContaining({ id: session.playerId, isConnected: true }),
       ]),
     }));
   });
@@ -353,8 +355,8 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
 
     _addRoomForTest(makeRoom({
       status: 'playing',
-      players: [{ id: session.token, username: 'Bob', isConnected: false }],
-      ownerId: session.token,
+      players: [{ id: session.playerId, username: 'Bob', isConnected: false }],
+      ownerId: session.playerId,
     }));
 
     const engine = makeStubEngine();
@@ -363,12 +365,12 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
       gameType: GameType.BLACKJACK,
       state: {
         gameType: GameType.BLACKJACK,
-        players: [session.token],
+        players: [session.playerId],
         currentPlayerIndex: 0,
         status: 'playing',
       },
       engine,
-      playerUsernames: new Map([[session.token, 'Bob']]),
+      playerUsernames: new Map([[session.playerId, 'Bob']]),
       isPaused: false,
       pausedForPlayerId: null,
     };
@@ -379,10 +381,11 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
 
     handleAuthenticate(socket, io, { token: session.token });
 
-    // Socket should receive gameState
-    expect(socket.emit).toHaveBeenCalledWith('gameState', expect.objectContaining({
+    // Reconnected socket should receive gameState (addressed by its new socket id)
+    expect(io.to).toHaveBeenCalledWith('new-socket');
+    expect(io._roomEmit).toHaveBeenCalledWith('gameState', expect.objectContaining({
       gameType: GameType.BLACKJACK,
-      myPlayerId: session.token,
+      myPlayerId: session.playerId,
       status: 'playing',
     }));
   });
@@ -395,8 +398,8 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
 
     _addRoomForTest(makeRoom({
       status: 'playing',
-      players: [{ id: session.token, username: 'Bob', isConnected: false }],
-      ownerId: session.token,
+      players: [{ id: session.playerId, username: 'Bob', isConnected: false }],
+      ownerId: session.playerId,
     }));
 
     const engine = makeStubEngine();
@@ -405,14 +408,14 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
       gameType: GameType.BLACKJACK,
       state: {
         gameType: GameType.BLACKJACK,
-        players: [session.token],
+        players: [session.playerId],
         currentPlayerIndex: 0,
         status: 'playing',
       },
       engine,
-      playerUsernames: new Map([[session.token, 'Bob']]),
+      playerUsernames: new Map([[session.playerId, 'Bob']]),
       isPaused: true,
-      pausedForPlayerId: session.token,
+      pausedForPlayerId: session.playerId,
     };
     _addGameForTest(gameInstance);
 

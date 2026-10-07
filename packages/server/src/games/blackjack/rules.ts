@@ -68,3 +68,8 @@ export function calculateHandValue(cards: Card[]): number {
 export function isBust(cards: Card[]): boolean {
   return calculateHandValue(cards) > 21;
 }
+
+/** A natural blackjack: exactly two cards totalling 21. */
+export function isNatural(cards: Card[]): boolean {
+  return cards.length === 2 && calculateHandValue(cards) === 21;
+}

@@ -1,7 +1,9 @@
 import { gameTypeSchema, GameType } from '@cardpal/shared';
-import { getRooms, createRoom, toRoomState, getRoomById, addPlayerToRoom, removePlayerFromRoom, GAME_MAX_PLAYERS } from '../../state/rooms.js';
-import { updateSessionRoomId } from '../../state/sessions.js';
+import { getRooms, createRoom, toRoomState, getRoomById, addPlayerToRoom, removePlayerFromRoom, setRoomStatus, GAME_MAX_PLAYERS } from '../../state/rooms.js';
+import { updateSessionRoomId, getSessionByPlayerId } from '../../state/sessions.js';
+import { getGame, removeGame } from '../../state/games.js';
 import type { AppSocket, AppServer } from '../types.js';
+import { safeHandler } from '../safeHandler.js';
 
 export function sendLobbyState(socket: AppSocket): void {
   socket.emit('lobbyState', { rooms: getRooms() });
@@ -16,7 +18,7 @@ export function handleCreateRoom(
   io: AppServer,
   data: { gameType: string },
 ): void {
-  const result = gameTypeSchema.safeParse(data.gameType);
+  const result = gameTypeSchema.safeParse(data?.gameType);
   if (!result.success) {
     socket.emit('error', { code: 'VALIDATION_ERROR', message: 'Invalid game type' });
     return;
@@ -33,7 +35,7 @@ export function handleCreateRoom(
     return;
   }
 
-  const room = createRoom(result.data, session.token, session.username);
+  const room = createRoom(result.data, session.playerId, session.username);
 
   socket.join(room.id);
 
@@ -52,7 +54,7 @@ export function handleJoinRoom(
   io: AppServer,
   data: { roomId: string },
 ): void {
-  if (!data || typeof data.roomId !== 'string' || data.roomId.length === 0) {
+  if (typeof data?.roomId !== 'string' || data.roomId.length === 0) {
     socket.emit('error', { code: 'VALIDATION_ERROR', message: 'Invalid roomId' });
     return;
   }
@@ -84,7 +86,7 @@ export function handleJoinRoom(
     return;
   }
 
-  const updatedRoom = addPlayerToRoom(data.roomId, session.token, session.username);
+  const updatedRoom = addPlayerToRoom(data.roomId, session.playerId, session.username);
   if (!updatedRoom) return;
 
   socket.join(updatedRoom.id);
@@ -113,7 +115,12 @@ export function handleLeaveRoom(
   }
 
   const roomId = session.roomId;
-  const { room, deleted } = removePlayerFromRoom(roomId, session.token);
+  if (getRoomById(roomId)?.status === 'playing') {
+    socket.emit('error', { code: 'GAME_IN_PROGRESS', message: 'Cannot leave a room while a game is in progress' });
+    return;
+  }
+
+  const { room, deleted } = removePlayerFromRoom(roomId, session.playerId);
 
   socket.leave(roomId);
   updateSessionRoomId(session.token, null);
@@ -129,8 +136,77 @@ export function handleLeaveRoom(
   console.log(`Player left: ${session.username} ← room (${deleted ? 'room deleted' : 'room kept'})`);
 }
 
+export function handleKickPlayer(
+  socket: AppSocket,
+  io: AppServer,
+  data: { playerId: string },
+): void {
+  const session = socket.data.session;
+  if (!session) {
+    socket.emit('error', { code: 'AUTH_ERROR', message: 'Not authenticated' });
+    return;
+  }
+
+  if (typeof data?.playerId !== 'string' || data.playerId.length === 0) {
+    socket.emit('error', { code: 'VALIDATION_ERROR', message: 'Invalid playerId' });
+    return;
+  }
+
+  const room = session.roomId ? getRoomById(session.roomId) : null;
+  if (!room) {
+    socket.emit('error', { code: 'VALIDATION_ERROR', message: 'Not in a room' });
+    return;
+  }
+
+  if (room.ownerId !== session.playerId) {
+    socket.emit('error', { code: 'NOT_AUTHORIZED', message: 'Only the host can remove players' });
+    return;
+  }
+
+  if (data.playerId === session.playerId) {
+    socket.emit('error', { code: 'VALIDATION_ERROR', message: 'You cannot remove yourself' });
+    return;
+  }
+
+  const target = room.players.find((p) => p.id === data.playerId);
+  if (!target) {
+    socket.emit('error', { code: 'VALIDATION_ERROR', message: 'Player is not in this room' });
+    return;
+  }
+
+  // Mid-game, only players who dropped out may be removed (the game can't continue
+  // without them). The game can't continue with a player missing either, so it ends.
+  if (room.status === 'playing') {
+    if (target.isConnected) {
+      socket.emit('error', { code: 'GAME_IN_PROGRESS', message: 'Only disconnected players can be removed during a game' });
+      return;
+    }
+    if (getGame(room.id)) removeGame(room.id);
+    setRoomStatus(room.id, 'lobby');
+    io.to(room.id).emit('gameState', null);
+  }
+
+  const { room: updatedRoom } = removePlayerFromRoom(room.id, target.id);
+
+  const targetSession = getSessionByPlayerId(target.id);
+  if (targetSession) {
+    updateSessionRoomId(targetSession.token, null);
+    io.in(targetSession.socketId).socketsLeave(room.id);
+    io.to(targetSession.socketId).emit('kicked', { roomName: room.name });
+    io.to(targetSession.socketId).emit('lobbyState', { rooms: getRooms() });
+  }
+
+  if (updatedRoom) {
+    io.to(room.id).emit('roomState', toRoomState(updatedRoom));
+  }
+  broadcastLobbyState(io);
+
+  console.log(`Player kicked: ${target.username} from ${room.name} by ${session.username}`);
+}
+
 export function registerLobbyHandlers(socket: AppSocket, io: AppServer): void {
-  socket.on('createRoom', (data) => handleCreateRoom(socket, io, data));
-  socket.on('joinRoom', (data) => handleJoinRoom(socket, io, data));
-  socket.on('leaveRoom', () => handleLeaveRoom(socket, io));
+  socket.on('createRoom', safeHandler(socket, 'createRoom', (data) => handleCreateRoom(socket, io, data)));
+  socket.on('joinRoom', safeHandler(socket, 'joinRoom', (data) => handleJoinRoom(socket, io, data)));
+  socket.on('leaveRoom', safeHandler(socket, 'leaveRoom', () => handleLeaveRoom(socket, io)));
+  socket.on('kickPlayer', safeHandler(socket, 'kickPlayer', (data) => handleKickPlayer(socket, io, data)));
 }

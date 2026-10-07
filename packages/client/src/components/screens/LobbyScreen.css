@@ -203,3 +203,13 @@
   font-size: 0.875rem;
   text-align: center;
 }
+
+.lobby-notice {
+  margin: 0 0 1rem;
+  padding: 0.625rem 1rem;
+  color: #e94560;
+  background: rgba(233, 69, 96, 0.12);
+  border: 1px solid #e94560;
+  border-radius: 8px;
+  font-size: 0.875rem;
+}

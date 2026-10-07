@@ -8,6 +8,8 @@ export const errorCodeSchema = z.enum([
   'ROOM_NOT_FOUND',
   'NOT_AUTHORIZED',
   'GAME_IN_PROGRESS',
+  'GAME_PAUSED',
+  'RATE_LIMITED',
   'UNKNOWN_ERROR',
 ]);
 

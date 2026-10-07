@@ -1,5 +1,6 @@
 import { useAppStore } from '../../store/index.js';
 import { socket } from '../../socket/client.js';
+import { RemoveDisconnectedPlayers } from '../ui/RemoveDisconnectedPlayers.js';
 import { AnimatedCard } from '../ui/AnimatedCard.js';
 import { detectNewCards } from '../../utils/cardDiff.js';
 import { SkipBoGameScreen } from './SkipBoGameScreen.js';
@@ -13,7 +14,7 @@ export function GameScreen() {
   const gameState = useAppStore((s) => s.gameState);
   const previousGameState = useAppStore((s) => s.previousGameState);
   const currentRoom = useAppStore((s) => s.currentRoom);
-  const sessionToken = useAppStore((s) => s.sessionToken);
+  const playerId = useAppStore((s) => s.playerId);
 
   if (!gameState) return null;
 
@@ -40,7 +41,7 @@ export function GameScreen() {
   const canAct = validActions.length > 0 && !isFinished && !isPaused;
   const canHit = validActions.some((a) => a.type === 'hit');
   const canStand = validActions.some((a) => a.type === 'stand');
-  const isOwner = currentRoom?.ownerId === sessionToken;
+  const isOwner = currentRoom?.ownerId === playerId;
 
   // Detect new cards for animation
   const newCards = detectNewCards(previousGameState, gameState);
@@ -121,10 +122,11 @@ export function GameScreen() {
 
       {/* Pause Banner */}
       {isPaused && pausedForPlayer && (
-        <div className="game-paused-banner">
+        <div className="game-paused-banner" onClick={(e) => e.stopPropagation()}>
           <span className="game-paused-text">
             Game paused — waiting for {pausedForPlayer} to reconnect...
           </span>
+          {isOwner && <RemoveDisconnectedPlayers players={players} />}
         </div>
       )}
 

@@ -15,6 +15,7 @@ const GAME_TYPES = [GameType.BLACKJACK, GameType.SKIPBO] as const;
 export function LobbyScreen() {
   const lobbyRooms = useAppStore((s) => s.lobbyRooms);
   const username = useAppStore((s) => s.username);
+  const notice = useAppStore((s) => s.errorMessage);
 
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +35,12 @@ export function LobbyScreen() {
     return () => { socket.off('error', onError); };
   }, []);
 
+  function dismissNotice() {
+    if (useAppStore.getState().errorMessage) useAppStore.getState().setErrorMessage(null);
+  }
+
   function handleCreateClick() {
+    dismissNotice();
     setIsCreating(true);
     setErrorMessage(null);
   }
@@ -52,6 +58,7 @@ export function LobbyScreen() {
   }
 
   function handleJoinRoom(roomId: string) {
+    dismissNotice();
     setIsJoining(true);
     setErrorMessage(null);
     socket.emit('joinRoom', { roomId });
@@ -66,6 +73,7 @@ export function LobbyScreen() {
       </header>
 
       <div className="lobby-content">
+        {notice && <p className="lobby-notice">{notice}</p>}
         <div className="lobby-rooms-header">
           <h2 className="lobby-rooms-title">Game Rooms</h2>
           {!isCreating ? (

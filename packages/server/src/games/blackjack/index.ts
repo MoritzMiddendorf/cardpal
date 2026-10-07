@@ -2,7 +2,7 @@ import { GameType } from '@cardpal/shared';
 import type { GameAction, PlayerResult, GameResult } from '@cardpal/shared';
 import type { GameEngine } from '../engine.js';
 import type { BlackjackState, BlackjackPlayerHand } from './types.js';
-import { createDeck, shuffleDeck, dealCard, calculateHandValue, isBust } from './rules.js';
+import { createDeck, shuffleDeck, dealCard, calculateHandValue, isBust, isNatural } from './rules.js';
 
 function deepCopy(state: BlackjackState): BlackjackState {
   return JSON.parse(JSON.stringify(state));
@@ -17,6 +17,22 @@ function findNextActivePlayer(hands: BlackjackPlayerHand[], afterIndex: number):
     if (!hand.isBust && !hand.hasStood) return idx;
   }
   return -1;
+}
+
+/** Outcome of one finished player hand against the dealer. A natural beats any other 21. */
+function handResult(hand: BlackjackPlayerHand, dealerCards: BlackjackState['dealerCards']): GameResult {
+  if (hand.isBust) return 'lose';
+  const playerNatural = isNatural(hand.cards);
+  const dealerNatural = isNatural(dealerCards);
+  if (playerNatural || dealerNatural) {
+    if (playerNatural && dealerNatural) return 'push';
+    return playerNatural ? 'win' : 'lose';
+  }
+  const dealerValue = calculateHandValue(dealerCards);
+  const playerValue = calculateHandValue(hand.cards);
+  if (dealerValue > 21 || playerValue > dealerValue) return 'win';
+  if (playerValue === dealerValue) return 'push';
+  return 'lose';
 }
 
 /** Check if all players have finished (bust or stood). */
@@ -171,71 +187,19 @@ export const blackjackEngine: GameEngine<BlackjackState> = {
 
   getWinner(state: BlackjackState): string | null {
     if (state.status !== 'finished') return null;
-
-    const dealerValue = calculateHandValue(state.dealerCards);
-    const dealerBust = dealerValue > 21;
-
-    let bestPlayer: string | null = null;
-    let bestOutcome: 'win' | 'push' | 'lose' = 'lose';
-
-    for (const hand of state.playerHands) {
-      if (hand.isBust) continue;
-
-      const playerValue = calculateHandValue(hand.cards);
-
-      let outcome: 'win' | 'push' | 'lose';
-      if (dealerBust) {
-        outcome = 'win';
-      } else if (playerValue > dealerValue) {
-        outcome = 'win';
-      } else if (playerValue === dealerValue) {
-        outcome = 'push';
-      } else {
-        outcome = 'lose';
-      }
-
-      // Prefer win over push; first winner wins
-      if (outcome === 'win' && bestOutcome !== 'win') {
-        bestPlayer = hand.playerId;
-        bestOutcome = outcome;
-      } else if (outcome === 'push' && bestOutcome === 'lose') {
-        bestPlayer = hand.playerId;
-        bestOutcome = outcome;
-      }
-    }
-
-    // Return winner only if someone actually won; null for all-push or all-lose
-    return bestOutcome === 'win' ? bestPlayer : null;
+    // First winning hand, or null when nobody beat the dealer
+    const winner = state.playerHands.find((hand) => handResult(hand, state.dealerCards) === 'win');
+    return winner?.playerId ?? null;
   },
 
   getResults(state: BlackjackState, playerUsernames: Map<string, string>): PlayerResult[] {
     if (state.status !== 'finished') return [];
 
-    const dealerValue = calculateHandValue(state.dealerCards);
-    const dealerBust = dealerValue > 21;
-
-    return state.playerHands.map((hand) => {
-      const playerValue = calculateHandValue(hand.cards);
-
-      let result: GameResult;
-      if (hand.isBust) {
-        result = 'lose';
-      } else if (dealerBust) {
-        result = 'win';
-      } else if (playerValue > dealerValue) {
-        result = 'win';
-      } else if (playerValue === dealerValue) {
-        result = 'push';
-      } else {
-        result = 'lose';
-      }
-
-      return {
-        playerId: hand.playerId,
-        username: playerUsernames.get(hand.playerId) ?? 'Unknown',
-        result,
-        handValue: playerValue,
-      };
-    });
+    return state.playerHands.map((hand) => ({
+      playerId: hand.playerId,
+      username: playerUsernames.get(hand.playerId) ?? 'Unknown',
+      result: handResult(hand, state.dealerCards),
+      handValue: calculateHandValue(hand.cards),
+    }));
   },
 };

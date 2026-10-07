@@ -13,7 +13,7 @@ function createMockSocket(auth: Record<string, unknown> = {}) {
   return {
     handshake: { auth },
     data: {} as Record<string, unknown>,
-  } as Parameters<typeof authMiddleware>[0];
+  } as unknown as Parameters<typeof authMiddleware>[0];
 }
 
 describe('authMiddleware', () => {
