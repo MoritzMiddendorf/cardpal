@@ -11,17 +11,17 @@
   },
   "dependencies": {
     "@cardpal/shared": "workspace:*",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "socket.io-client": "^4.8.3",
-    "zustand": "^5.0.11"
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "socket.io-client": "^4.8.4",
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
-    "@vitejs/plugin-react": "^4.4.0",
-    "typescript": "~5.9.3",
-    "vite": "^6.3.0",
-    "vitest": "^4.0.18"
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.3",
+    "vitest": "^5.0.3"
   }
 }

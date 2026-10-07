@@ -10,10 +10,17 @@
     "generate-otp": "tsx scripts/generate-otp.ts"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   },
   "devDependencies": {
-    "concurrently": "^9.1.0",
-    "typescript": "~5.9.3"
+    "concurrently": "^10.0.5",
+    "tsx": "^4.23.15",
+    "typescript": "~7.0.2"
+  },
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=24"
   }
 }
