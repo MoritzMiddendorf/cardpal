@@ -1,3 +1,5 @@
+Before doing anything, read `_bmad-output/planning-artifacts/decision-log.md`: it holds the current project status, open items, and every decision made after the original PRD/architecture (it overrides them where they differ, e.g. hosting is Northflank, not Render). When you make or change a decision, record it there.
+
 For this project, you should run the BMAD workflow end‑to‑end without waiting for me to manually type commands.
 
 
