@@ -145,6 +145,8 @@ pnpm init
 
 ### Deployment Target
 
+> **Superseded (2026-10-07):** hosting moved to Northflank via a Dockerfile; see `decision-log.md` D1/D2.
+
 **Platform:** Render (free tier)
 
 **Rationale:**
@@ -194,6 +196,8 @@ Server Memory:
 - Generated via `crypto.randomBytes()` for security
 - Stored in-memory with 12-hour TTL
 - All previous sessions invalidated when new OTP generated
+
+> **Amended (2026-10-07):** sessions also carry a public `playerId`; the token is never broadcast. Admin endpoint needs `ADMIN_SECRET`. See `decision-log.md` D3/D4.
 
 **Session Token Flow:**
 1. User submits valid OTP + username
@@ -268,6 +272,8 @@ interface AppState {
 - Zustand persists `sessionToken` to localStorage for reconnection
 
 ### Infrastructure & Deployment
+
+> **Superseded (2026-10-07):** hosting moved to Northflank via a Dockerfile; see `decision-log.md` D1–D3 (adds `ADMIN_SECRET`; CI is GitHub Actions).
 
 **Deployment Pipeline:**
 - GitHub repo connected to Render
