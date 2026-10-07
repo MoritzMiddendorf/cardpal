@@ -2,6 +2,7 @@ import { gameTypeSchema, GameType } from '@cardpal/shared';
 import { getRooms, createRoom, toRoomState, getRoomById, addPlayerToRoom, removePlayerFromRoom, GAME_MAX_PLAYERS } from '../../state/rooms.js';
 import { updateSessionRoomId } from '../../state/sessions.js';
 import type { AppSocket, AppServer } from '../types.js';
+import { safeHandler } from '../safeHandler.js';
 
 export function sendLobbyState(socket: AppSocket): void {
   socket.emit('lobbyState', { rooms: getRooms() });
@@ -16,7 +17,7 @@ export function handleCreateRoom(
   io: AppServer,
   data: { gameType: string },
 ): void {
-  const result = gameTypeSchema.safeParse(data.gameType);
+  const result = gameTypeSchema.safeParse(data?.gameType);
   if (!result.success) {
     socket.emit('error', { code: 'VALIDATION_ERROR', message: 'Invalid game type' });
     return;
@@ -33,7 +34,7 @@ export function handleCreateRoom(
     return;
   }
 
-  const room = createRoom(result.data, session.token, session.username);
+  const room = createRoom(result.data, session.playerId, session.username);
 
   socket.join(room.id);
 
@@ -52,7 +53,7 @@ export function handleJoinRoom(
   io: AppServer,
   data: { roomId: string },
 ): void {
-  if (!data || typeof data.roomId !== 'string' || data.roomId.length === 0) {
+  if (typeof data?.roomId !== 'string' || data.roomId.length === 0) {
     socket.emit('error', { code: 'VALIDATION_ERROR', message: 'Invalid roomId' });
     return;
   }
@@ -84,7 +85,7 @@ export function handleJoinRoom(
     return;
   }
 
-  const updatedRoom = addPlayerToRoom(data.roomId, session.token, session.username);
+  const updatedRoom = addPlayerToRoom(data.roomId, session.playerId, session.username);
   if (!updatedRoom) return;
 
   socket.join(updatedRoom.id);
@@ -113,7 +114,12 @@ export function handleLeaveRoom(
   }
 
   const roomId = session.roomId;
-  const { room, deleted } = removePlayerFromRoom(roomId, session.token);
+  if (getRoomById(roomId)?.status === 'playing') {
+    socket.emit('error', { code: 'GAME_IN_PROGRESS', message: 'Cannot leave a room while a game is in progress' });
+    return;
+  }
+
+  const { room, deleted } = removePlayerFromRoom(roomId, session.playerId);
 
   socket.leave(roomId);
   updateSessionRoomId(session.token, null);
@@ -130,7 +136,7 @@ export function handleLeaveRoom(
 }
 
 export function registerLobbyHandlers(socket: AppSocket, io: AppServer): void {
-  socket.on('createRoom', (data) => handleCreateRoom(socket, io, data));
-  socket.on('joinRoom', (data) => handleJoinRoom(socket, io, data));
-  socket.on('leaveRoom', () => handleLeaveRoom(socket, io));
+  socket.on('createRoom', safeHandler(socket, 'createRoom', (data) => handleCreateRoom(socket, io, data)));
+  socket.on('joinRoom', safeHandler(socket, 'joinRoom', (data) => handleJoinRoom(socket, io, data)));
+  socket.on('leaveRoom', safeHandler(socket, 'leaveRoom', () => handleLeaveRoom(socket, io)));
 }

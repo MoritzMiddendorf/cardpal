@@ -609,3 +609,32 @@ describe('blackjackEngine.getResults', () => {
     expect(results[1]!.username).toBe('Unknown');
   });
 });
+
+describe('blackjackEngine.getResults - naturals', () => {
+  const names = new Map([['p1', 'Alice'], ['p2', 'Bob']]);
+  const finished = (p1: Card[], p2: Card[], dealer: Card[]) =>
+    makeState({
+      status: 'finished',
+      dealerDone: true,
+      playerHands: [
+        { playerId: 'p1', cards: p1, isBust: false, hasStood: true },
+        { playerId: 'p2', cards: p2, isBust: false, hasStood: true },
+      ],
+      dealerCards: dealer,
+    });
+
+  it('a natural beats a dealer 21 made of three cards', () => {
+    const results = blackjackEngine.getResults(finished([card('A'), card('K')], [card('9'), card('9')], [card('7'), card('7'), card('7')]), names);
+    expect(results.find((r) => r.playerId === 'p1')!.result).toBe('win');
+  });
+
+  it('a dealer natural beats a player 21 made of three cards', () => {
+    const results = blackjackEngine.getResults(finished([card('7'), card('7'), card('7')], [card('A'), card('Q')], [card('A'), card('J')]), names);
+    expect(results.find((r) => r.playerId === 'p1')!.result).toBe('lose');
+    expect(results.find((r) => r.playerId === 'p2')!.result).toBe('push');
+  });
+
+  it('getWinner agrees with getResults for naturals', () => {
+    expect(blackjackEngine.getWinner(finished([card('7'), card('7'), card('7')], [card('A'), card('Q')], [card('7'), card('7'), card('7')]))).toBe('p2');
+  });
+});

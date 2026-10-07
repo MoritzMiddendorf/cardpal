@@ -22,12 +22,12 @@ const GAME_MAX_PLAYERS: Record<GameType, number> = {
 
 export function RoomScreen() {
   const currentRoom = useAppStore((s) => s.currentRoom);
-  const sessionToken = useAppStore((s) => s.sessionToken);
+  const playerId = useAppStore((s) => s.playerId);
   const [isLeaving, setIsLeaving] = useState(false);
 
   if (!currentRoom) return null;
 
-  const isOwner = currentRoom.ownerId === sessionToken;
+  const isOwner = currentRoom.ownerId === playerId;
   const ownerPlayer = currentRoom.players.find((p: PlayerInfo) => p.isOwner);
   const minPlayers = GAME_MIN_PLAYERS[currentRoom.gameType];
   const maxPlayers = GAME_MAX_PLAYERS[currentRoom.gameType];

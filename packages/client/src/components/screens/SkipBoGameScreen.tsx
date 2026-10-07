@@ -24,7 +24,7 @@ function resultLabel(result: PlayerResult['result']): string {
 export function SkipBoGameScreen() {
   const gameState = useAppStore((s) => s.gameState) as FilteredGameState;
   const currentRoom = useAppStore((s) => s.currentRoom);
-  const sessionToken = useAppStore((s) => s.sessionToken);
+  const playerId = useAppStore((s) => s.playerId);
 
   const [selectedSource, setSelectedSource] = useState<SourceSelection | null>(null);
 
@@ -40,7 +40,7 @@ export function SkipBoGameScreen() {
   } = gameState;
 
   const isFinished = status === 'finished';
-  const isOwner = currentRoom?.ownerId === sessionToken;
+  const isOwner = currentRoom?.ownerId === playerId;
   const isMyTurn = validActions.length > 0 && !isFinished && !isPaused;
   const myInfo = players.find((p) => p.id === myPlayerId);
   const myResult = results?.find((r: PlayerResult) => r.playerId === myPlayerId);

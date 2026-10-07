@@ -48,6 +48,27 @@ function advanceTurn(state: SkipBoGameState): void {
   drawToFive(state, state.currentPlayerIndex);
 }
 
+/**
+ * Make sure the current player can actually do something. Once the draw pile
+ * runs dry a player can be left with an empty hand and nothing playable; their
+ * turn is skipped. If nobody at the table can move, the game ends (stalemate).
+ * Mutates state.
+ */
+function skipPlayersWithoutMoves(state: SkipBoGameState): void {
+  for (let i = 0; i < state.players.length; i++) {
+    if (skipBoEngine.getValidActions(state, state.players[state.currentPlayerIndex]!).length > 0) return;
+    advanceTurn(state);
+  }
+  state.status = 'finished';
+}
+
+/** Compare action payloads by value, independent of key order. */
+function payloadsEqual(a: Record<string, unknown> | undefined, b: Record<string, unknown> | undefined): boolean {
+  const aKeys = Object.keys(a ?? {});
+  const bKeys = Object.keys(b ?? {});
+  return aKeys.length === bKeys.length && aKeys.every((k) => a?.[k] === b?.[k]);
+}
+
 /** Reveal top card of stock pile after a card was played from it. Mutates state. */
 function revealStockTop(ps: SkipBoPlayerState): void {
   if (ps.stockPile.length > 0) {
@@ -181,9 +202,7 @@ export const skipBoEngine: GameEngine<SkipBoGameState> = {
 
     // Validate action is in the set of valid actions
     const validActions = this.getValidActions(state, playerId);
-    const isValid = validActions.some(
-      (va) => va.type === type && JSON.stringify(va.payload) === JSON.stringify(payload),
-    );
+    const isValid = validActions.some((va) => va.type === type && payloadsEqual(va.payload, payload));
     if (!isValid) {
       throw new Error('Invalid action');
     }
@@ -234,18 +253,25 @@ export const skipBoEngine: GameEngine<SkipBoGameState> = {
     // Check win condition: if any player's stock pile is empty, game is over
     if (this.isGameOver(newState)) {
       newState.status = 'finished';
+    } else {
+      skipPlayersWithoutMoves(newState);
     }
 
     return newState;
   },
 
   isGameOver(state: SkipBoGameState): boolean {
-    return state.playerStates.some((ps) => ps.stockPile.length === 0);
+    return state.status === 'finished' || state.playerStates.some((ps) => ps.stockPile.length === 0);
   },
 
   getWinner(state: SkipBoGameState): string | null {
     const winner = state.playerStates.find((ps) => ps.stockPile.length === 0);
-    return winner ? winner.playerId : null;
+    if (winner) return winner.playerId;
+    if (state.status !== 'finished') return null;
+    // Stalemate: the player closest to emptying their stock pile wins, unless tied
+    const sorted = [...state.playerStates].sort((a, b) => a.stockPile.length - b.stockPile.length);
+    if (sorted.length > 1 && sorted[0]!.stockPile.length === sorted[1]!.stockPile.length) return null;
+    return sorted[0]?.playerId ?? null;
   },
 
   getResults(state: SkipBoGameState, playerUsernames: Map<string, string>): PlayerResult[] {

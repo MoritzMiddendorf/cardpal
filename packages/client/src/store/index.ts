@@ -7,6 +7,8 @@ interface AppState {
   // Auth
   sessionToken: string | null;
   pendingSessionId: string | null;
+  /** Public player id assigned by the server (used for ownership/turn checks). */
+  playerId: string | null;
   username: string | null;
 
   // Connection
@@ -29,6 +31,7 @@ interface AppState {
   // Actions
   setSessionToken: (token: string | null) => void;
   setPendingSessionId: (id: string | null) => void;
+  setPlayerId: (playerId: string | null) => void;
   setUsername: (username: string | null) => void;
   setConnectionStatus: (status: AppState['connectionStatus']) => void;
   setScreen: (screen: Screen) => void;
@@ -43,6 +46,7 @@ interface AppState {
 export const useAppStore = create<AppState>((set) => ({
   sessionToken: localStorage.getItem('cardpal_token'),
   pendingSessionId: null,
+  playerId: null,
   username: null,
   connectionStatus: 'disconnected',
   screen: 'otp',
@@ -63,6 +67,7 @@ export const useAppStore = create<AppState>((set) => ({
     set({ sessionToken: token });
   },
   setPendingSessionId: (pendingSessionId) => set({ pendingSessionId }),
+  setPlayerId: (playerId) => set({ playerId }),
   setUsername: (username) => set({ username }),
   setConnectionStatus: (connectionStatus) => set({ connectionStatus }),
   setScreen: (screen) => set({ screen }),

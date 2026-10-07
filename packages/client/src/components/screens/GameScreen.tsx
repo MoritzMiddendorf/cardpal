@@ -13,7 +13,7 @@ export function GameScreen() {
   const gameState = useAppStore((s) => s.gameState);
   const previousGameState = useAppStore((s) => s.previousGameState);
   const currentRoom = useAppStore((s) => s.currentRoom);
-  const sessionToken = useAppStore((s) => s.sessionToken);
+  const playerId = useAppStore((s) => s.playerId);
 
   if (!gameState) return null;
 
@@ -40,7 +40,7 @@ export function GameScreen() {
   const canAct = validActions.length > 0 && !isFinished && !isPaused;
   const canHit = validActions.some((a) => a.type === 'hit');
   const canStand = validActions.some((a) => a.type === 'stand');
-  const isOwner = currentRoom?.ownerId === sessionToken;
+  const isOwner = currentRoom?.ownerId === playerId;
 
   // Detect new cards for animation
   const newCards = detectNewCards(previousGameState, gameState);

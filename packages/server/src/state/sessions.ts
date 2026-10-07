@@ -5,7 +5,10 @@ export interface PendingSession {
 }
 
 export interface UserSession {
+  /** Secret bearer credential — never send to anyone but the session owner. */
   token: string;
+  /** Public identifier used in rooms and game state; safe to broadcast. */
+  playerId: string;
   username: string;
   socketId: string;
   roomId: string | null;
@@ -59,7 +62,8 @@ export function createSession(
   pendingSessions.delete(pendingSessionId);  // consume the pending session
 
   const token = crypto.randomUUID();
-  const session: UserSession = { token, username, socketId, roomId: null, otpCode: pending.otpCode };  // M3: use stored OTP code
+  const playerId = crypto.randomUUID();
+  const session: UserSession = { token, playerId, username, socketId, roomId: null, otpCode: pending.otpCode };  // M3: use stored OTP code
   sessions.set(token, session);
   return { ...session };
 }
@@ -67,6 +71,17 @@ export function createSession(
 export function getSessionByToken(token: string): UserSession | null {
   const session = sessions.get(token);
   return session ? { ...session } : null;
+}
+
+export function getSessionByPlayerId(playerId: string): UserSession | null {
+  for (const session of sessions.values()) {
+    if (session.playerId === playerId) return { ...session };
+  }
+  return null;
+}
+
+export function getAllSessions(): UserSession[] {
+  return Array.from(sessions.values(), (s) => ({ ...s }));
 }
 
 export function updateSessionSocketId(token: string, socketId: string): void {

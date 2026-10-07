@@ -76,7 +76,7 @@ describe('handleChangeGameType', () => {
 
   it('changes game type when called by owner', () => {
     const session = setupOwnerSession();
-    _addRoomForTest(makeRoom({ ownerId: session.token, players: [{ id: session.token, username: 'Alice', isConnected: true }] }));
+    _addRoomForTest(makeRoom({ ownerId: session.playerId, players: [{ id: session.playerId, username: 'Alice', isConnected: true }] }));
 
     const socket = createMockSocket({ session: { ...session, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
@@ -111,7 +111,7 @@ describe('handleChangeGameType', () => {
   it('emits NOT_AUTHORIZED when non-owner tries to change', () => {
     const ownerSession = setupOwnerSession();
     const playerSession = setupPlayerSession('Bob', 'socket-2');
-    _addRoomForTest(makeRoom({ ownerId: ownerSession.token }));
+    _addRoomForTest(makeRoom({ ownerId: ownerSession.playerId }));
 
     const socket = createMockSocket({ session: { ...playerSession, roomId: 'room-1' }, authType: 'token' }, 'socket-2');
     const io = createMockServer();
@@ -126,7 +126,7 @@ describe('handleChangeGameType', () => {
 
   it('emits GAME_IN_PROGRESS when room is playing', () => {
     const session = setupOwnerSession();
-    _addRoomForTest(makeRoom({ ownerId: session.token, status: 'playing', players: [{ id: session.token, username: 'Alice', isConnected: true }] }));
+    _addRoomForTest(makeRoom({ ownerId: session.playerId, status: 'playing', players: [{ id: session.playerId, username: 'Alice', isConnected: true }] }));
 
     const socket = createMockSocket({ session: { ...session, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
@@ -141,7 +141,7 @@ describe('handleChangeGameType', () => {
 
   it('emits VALIDATION_ERROR for invalid game type', () => {
     const session = setupOwnerSession();
-    _addRoomForTest(makeRoom({ ownerId: session.token, players: [{ id: session.token, username: 'Alice', isConnected: true }] }));
+    _addRoomForTest(makeRoom({ ownerId: session.playerId, players: [{ id: session.playerId, username: 'Alice', isConnected: true }] }));
 
     const socket = createMockSocket({ session: { ...session, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
@@ -182,10 +182,10 @@ describe('handleStartGame', () => {
     const playerSession = setupPlayerSession('Bob', 'socket-2');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
@@ -209,13 +209,13 @@ describe('handleStartGame', () => {
     // Should emit gameState to each player individually with correct myPlayerId
     expect(io.to).toHaveBeenCalledWith('socket-1');
     expect(io._emitFor('socket-1')).toHaveBeenCalledWith('gameState', expect.objectContaining({
-      myPlayerId: ownerSession.token,
+      myPlayerId: ownerSession.playerId,
       gameType: GameType.BLACKJACK,
       status: 'playing',
     }));
     expect(io.to).toHaveBeenCalledWith('socket-2');
     expect(io._emitFor('socket-2')).toHaveBeenCalledWith('gameState', expect.objectContaining({
-      myPlayerId: playerSession.token,
+      myPlayerId: playerSession.playerId,
       gameType: GameType.BLACKJACK,
       status: 'playing',
     }));
@@ -244,7 +244,7 @@ describe('handleStartGame', () => {
   it('emits NOT_AUTHORIZED when non-owner tries to start', () => {
     const ownerSession = setupOwnerSession();
     const playerSession = setupPlayerSession('Bob', 'socket-2');
-    _addRoomForTest(makeRoom({ ownerId: ownerSession.token }));
+    _addRoomForTest(makeRoom({ ownerId: ownerSession.playerId }));
 
     const socket = createMockSocket({ session: { ...playerSession, roomId: 'room-1' }, authType: 'token' }, 'socket-2');
     const io = createMockServer();
@@ -260,8 +260,8 @@ describe('handleStartGame', () => {
   it('emits VALIDATION_ERROR when not enough players', () => {
     const session = setupOwnerSession();
     _addRoomForTest(makeRoom({
-      ownerId: session.token,
-      players: [{ id: session.token, username: 'Alice', isConnected: true }],
+      ownerId: session.playerId,
+      players: [{ id: session.playerId, username: 'Alice', isConnected: true }],
     }));
     registerEngine(GameType.BLACKJACK, stubEngine);
 
@@ -284,13 +284,13 @@ describe('handleStartGame', () => {
     const p5 = setupPlayerSession('Eve', 'socket-5');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: p2.token, username: 'Bob', isConnected: true },
-        { id: p3.token, username: 'Charlie', isConnected: true },
-        { id: p4.token, username: 'Dave', isConnected: true },
-        { id: p5.token, username: 'Eve', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: p2.playerId, username: 'Bob', isConnected: true },
+        { id: p3.playerId, username: 'Charlie', isConnected: true },
+        { id: p4.playerId, username: 'Dave', isConnected: true },
+        { id: p5.playerId, username: 'Eve', isConnected: true },
       ],
     }));
     registerEngine(GameType.BLACKJACK, stubEngine);
@@ -311,7 +311,7 @@ describe('handleStartGame', () => {
 
   it('emits GAME_IN_PROGRESS when room already playing', () => {
     const session = setupOwnerSession();
-    _addRoomForTest(makeRoom({ ownerId: session.token, status: 'playing' }));
+    _addRoomForTest(makeRoom({ ownerId: session.playerId, status: 'playing' }));
 
     const socket = createMockSocket({ session: { ...session, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
@@ -328,10 +328,10 @@ describe('handleStartGame', () => {
     const ownerSession = setupOwnerSession();
     const playerSession = setupPlayerSession('Bob', 'socket-2');
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
     // Do NOT register engine
@@ -375,18 +375,18 @@ describe('handleEndGame', () => {
     const playerSession = setupPlayerSession('Bob', 'socket-2');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       status: 'playing',
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
     registerEngine(GameType.BLACKJACK, stubEngine);
     createGame('room-1', GameType.BLACKJACK, stubEngine, [
-      { id: ownerSession.token, username: 'Alice' },
-      { id: playerSession.token, username: 'Bob' },
+      { id: ownerSession.playerId, username: 'Alice' },
+      { id: playerSession.playerId, username: 'Bob' },
     ]);
 
     const io = createMockServer();
@@ -424,18 +424,18 @@ describe('handleGameAction', () => {
     const playerSession = setupPlayerSession('Bob', 'socket-2');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       status: 'playing',
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
     registerEngine(GameType.BLACKJACK, blackjackEngine);
     createGame('room-1', GameType.BLACKJACK, blackjackEngine, [
-      { id: ownerSession.token, username: 'Alice' },
-      { id: playerSession.token, username: 'Bob' },
+      { id: ownerSession.playerId, username: 'Alice' },
+      { id: playerSession.playerId, username: 'Bob' },
     ]);
 
     return { ownerSession, playerSession };
@@ -452,7 +452,7 @@ describe('handleGameAction', () => {
     const socket = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
 
-    handleGameAction(socket, io, { type: 'hit', playerId: ownerSession.token });
+    handleGameAction(socket, io, { type: 'hit', playerId: ownerSession.playerId });
 
     // Should not emit error
     expect(socket.emit).not.toHaveBeenCalled();
@@ -467,7 +467,7 @@ describe('handleGameAction', () => {
     expect(io.to).toHaveBeenCalledWith('socket-2');
     expect(io._emitFor('socket-1')).toHaveBeenCalledWith('gameState', expect.objectContaining({
       gameType: GameType.BLACKJACK,
-      myPlayerId: ownerSession.token,
+      myPlayerId: ownerSession.playerId,
     }));
     expect(io._emitFor('socket-2')).toHaveBeenCalledWith('gameState', expect.objectContaining({
       gameType: GameType.BLACKJACK,
@@ -480,17 +480,17 @@ describe('handleGameAction', () => {
     const socket = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
 
-    handleGameAction(socket, io, { type: 'stand', playerId: ownerSession.token });
+    handleGameAction(socket, io, { type: 'stand', playerId: ownerSession.playerId });
 
     // Should not emit error
     expect(socket.emit).not.toHaveBeenCalled();
 
     // Should broadcast to both players
     expect(io._emitFor('socket-1')).toHaveBeenCalledWith('gameState', expect.objectContaining({
-      myPlayerId: ownerSession.token,
+      myPlayerId: ownerSession.playerId,
     }));
     expect(io._emitFor('socket-2')).toHaveBeenCalledWith('gameState', expect.objectContaining({
-      myPlayerId: playerSession.token,
+      myPlayerId: playerSession.playerId,
     }));
 
     // After standing, current player should advance (game state updated)
@@ -505,11 +505,11 @@ describe('handleGameAction', () => {
 
     // Player 1 stands
     const socket1 = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
-    handleGameAction(socket1, io, { type: 'stand', playerId: ownerSession.token });
+    handleGameAction(socket1, io, { type: 'stand', playerId: ownerSession.playerId });
 
     // Player 2 stands → dealer auto-plays, game finishes
     const socket2 = createMockSocket({ session: { ...playerSession, roomId: 'room-1' }, authType: 'token' }, 'socket-2');
-    handleGameAction(socket2, io, { type: 'stand', playerId: playerSession.token });
+    handleGameAction(socket2, io, { type: 'stand', playerId: playerSession.playerId });
 
     // Game should be finished
     const game = getGame('room-1');
@@ -539,7 +539,7 @@ describe('handleGameAction', () => {
     const socket = createMockSocket({ session: { ...session, roomId: null }, authType: 'token' });
     const io = createMockServer();
 
-    handleGameAction(socket, io, { type: 'hit', playerId: session.token });
+    handleGameAction(socket, io, { type: 'hit', playerId: session.playerId });
 
     expect(socket.emit).toHaveBeenCalledWith('error', {
       code: 'VALIDATION_ERROR',
@@ -549,13 +549,13 @@ describe('handleGameAction', () => {
 
   it('emits VALIDATION_ERROR when no active game', () => {
     const session = setupOwnerSession();
-    _addRoomForTest(makeRoom({ ownerId: session.token, status: 'playing' }));
+    _addRoomForTest(makeRoom({ ownerId: session.playerId, status: 'playing' }));
     // No game created
 
     const socket = createMockSocket({ session: { ...session, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
 
-    handleGameAction(socket, io, { type: 'hit', playerId: session.token });
+    handleGameAction(socket, io, { type: 'hit', playerId: session.playerId });
 
     expect(socket.emit).toHaveBeenCalledWith('error', {
       code: 'VALIDATION_ERROR',
@@ -584,7 +584,7 @@ describe('handleGameAction', () => {
     const socket = createMockSocket({ session: { ...playerSession, roomId: 'room-1' }, authType: 'token' }, 'socket-2');
     const io = createMockServer();
 
-    handleGameAction(socket, io, { type: 'hit', playerId: playerSession.token });
+    handleGameAction(socket, io, { type: 'hit', playerId: playerSession.playerId });
 
     expect(socket.emit).toHaveBeenCalledWith('error', {
       code: 'INVALID_ACTION',
@@ -598,7 +598,7 @@ describe('handleGameAction', () => {
     const socket = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
 
-    handleGameAction(socket, io, { type: 'double-down', playerId: ownerSession.token });
+    handleGameAction(socket, io, { type: 'double-down', playerId: ownerSession.playerId });
 
     expect(socket.emit).toHaveBeenCalledWith('error', {
       code: 'INVALID_ACTION',
@@ -612,16 +612,16 @@ describe('handleGameAction', () => {
 
     // Both players stand → game finishes
     const socket1 = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
-    handleGameAction(socket1, io, { type: 'stand', playerId: ownerSession.token });
+    handleGameAction(socket1, io, { type: 'stand', playerId: ownerSession.playerId });
     const socket2 = createMockSocket({ session: { ...playerSession, roomId: 'room-1' }, authType: 'token' }, 'socket-2');
-    handleGameAction(socket2, io, { type: 'stand', playerId: playerSession.token });
+    handleGameAction(socket2, io, { type: 'stand', playerId: playerSession.playerId });
 
     // Verify game is finished
     expect(getGame('room-1')!.state.status).toBe('finished');
 
     // Attempt action on finished game
     const socket3 = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
-    handleGameAction(socket3, io, { type: 'hit', playerId: ownerSession.token });
+    handleGameAction(socket3, io, { type: 'hit', playerId: ownerSession.playerId });
 
     expect(socket3.emit).toHaveBeenCalledWith('error', {
       code: 'INVALID_ACTION',
@@ -635,10 +635,10 @@ describe('handleGameAction', () => {
     const socket = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
 
-    // Client sends spoofed playerId — server should override with session.token
+    // Client sends spoofed playerId — server should override with session.playerId
     handleGameAction(socket, io, { type: 'hit', playerId: 'spoofed-player-id' });
 
-    // Should not emit error (server uses ownerSession.token which IS the current player)
+    // Should not emit error (server uses ownerSession.playerId which IS the current player)
     expect(socket.emit).not.toHaveBeenCalled();
 
     // Game state should be updated
@@ -649,12 +649,12 @@ describe('handleGameAction', () => {
     const { ownerSession } = setupGameWithTwoPlayers();
 
     // Pause the game
-    setPaused('room-1', true, ownerSession.token);
+    setPaused('room-1', true, ownerSession.playerId);
 
     const socket = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
     const io = createMockServer();
 
-    handleGameAction(socket, io, { type: 'hit', playerId: ownerSession.token });
+    handleGameAction(socket, io, { type: 'hit', playerId: ownerSession.playerId });
 
     expect(socket.emit).toHaveBeenCalledWith('error', {
       code: 'GAME_PAUSED',
@@ -678,28 +678,28 @@ describe('broadcastGameState', () => {
     const playerSession = setupPlayerSession('Bob', 'socket-2');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       status: 'playing',
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
     registerEngine(GameType.BLACKJACK, blackjackEngine);
     createGame('room-1', GameType.BLACKJACK, blackjackEngine, [
-      { id: ownerSession.token, username: 'Alice' },
-      { id: playerSession.token, username: 'Bob' },
+      { id: ownerSession.playerId, username: 'Alice' },
+      { id: playerSession.playerId, username: 'Bob' },
     ]);
 
     const io = createMockServer();
     broadcastGameState('room-1', io);
 
     expect(io._emitFor('socket-1')).toHaveBeenCalledWith('gameState', expect.objectContaining({
-      myPlayerId: ownerSession.token,
+      myPlayerId: ownerSession.playerId,
     }));
     expect(io._emitFor('socket-2')).toHaveBeenCalledWith('gameState', expect.objectContaining({
-      myPlayerId: playerSession.token,
+      myPlayerId: playerSession.playerId,
     }));
   });
 
@@ -714,17 +714,17 @@ describe('broadcastGameState', () => {
     const ownerSession = setupOwnerSession();
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       status: 'playing',
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
         { id: 'disconnected-player', username: 'Bob', isConnected: false },
       ],
     }));
 
     registerEngine(GameType.BLACKJACK, stubEngine);
     createGame('room-1', GameType.BLACKJACK, stubEngine, [
-      { id: ownerSession.token, username: 'Alice' },
+      { id: ownerSession.playerId, username: 'Alice' },
       { id: 'disconnected-player', username: 'Bob' },
     ]);
 
@@ -752,26 +752,26 @@ describe('handlePlayAgain', () => {
     const playerSession = setupPlayerSession('Bob', 'socket-2');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       status: 'playing',
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
     registerEngine(GameType.BLACKJACK, blackjackEngine);
     createGame('room-1', GameType.BLACKJACK, blackjackEngine, [
-      { id: ownerSession.token, username: 'Alice' },
-      { id: playerSession.token, username: 'Bob' },
+      { id: ownerSession.playerId, username: 'Alice' },
+      { id: playerSession.playerId, username: 'Bob' },
     ]);
 
     // Finish the game by having both players stand
     const io = createMockServer();
     const socket1 = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
-    handleGameAction(socket1, io, { type: 'stand', playerId: ownerSession.token });
+    handleGameAction(socket1, io, { type: 'stand', playerId: ownerSession.playerId });
     const socket2 = createMockSocket({ session: { ...playerSession, roomId: 'room-1' }, authType: 'token' }, 'socket-2');
-    handleGameAction(socket2, io, { type: 'stand', playerId: playerSession.token });
+    handleGameAction(socket2, io, { type: 'stand', playerId: playerSession.playerId });
 
     // Verify game is finished
     expect(getGame('room-1')!.state.status).toBe('finished');
@@ -820,18 +820,18 @@ describe('handlePlayAgain', () => {
     const playerSession = setupPlayerSession('Bob', 'socket-2');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       status: 'playing',
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
     registerEngine(GameType.BLACKJACK, blackjackEngine);
     createGame('room-1', GameType.BLACKJACK, blackjackEngine, [
-      { id: ownerSession.token, username: 'Alice' },
-      { id: playerSession.token, username: 'Bob' },
+      { id: ownerSession.playerId, username: 'Alice' },
+      { id: playerSession.playerId, username: 'Bob' },
     ]);
 
     const socket = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
@@ -900,25 +900,25 @@ describe('handleReturnToLobby', () => {
     const playerSession = setupPlayerSession('Bob', 'socket-2');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       status: 'playing',
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
     registerEngine(GameType.BLACKJACK, blackjackEngine);
     createGame('room-1', GameType.BLACKJACK, blackjackEngine, [
-      { id: ownerSession.token, username: 'Alice' },
-      { id: playerSession.token, username: 'Bob' },
+      { id: ownerSession.playerId, username: 'Alice' },
+      { id: playerSession.playerId, username: 'Bob' },
     ]);
 
     const io = createMockServer();
     const socket1 = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });
-    handleGameAction(socket1, io, { type: 'stand', playerId: ownerSession.token });
+    handleGameAction(socket1, io, { type: 'stand', playerId: ownerSession.playerId });
     const socket2 = createMockSocket({ session: { ...playerSession, roomId: 'room-1' }, authType: 'token' }, 'socket-2');
-    handleGameAction(socket2, io, { type: 'stand', playerId: playerSession.token });
+    handleGameAction(socket2, io, { type: 'stand', playerId: playerSession.playerId });
 
     expect(getGame('room-1')!.state.status).toBe('finished');
 
@@ -950,18 +950,18 @@ describe('handleReturnToLobby', () => {
     const playerSession = setupPlayerSession('Bob', 'socket-2');
 
     _addRoomForTest(makeRoom({
-      ownerId: ownerSession.token,
+      ownerId: ownerSession.playerId,
       status: 'playing',
       players: [
-        { id: ownerSession.token, username: 'Alice', isConnected: true },
-        { id: playerSession.token, username: 'Bob', isConnected: true },
+        { id: ownerSession.playerId, username: 'Alice', isConnected: true },
+        { id: playerSession.playerId, username: 'Bob', isConnected: true },
       ],
     }));
 
     registerEngine(GameType.BLACKJACK, blackjackEngine);
     createGame('room-1', GameType.BLACKJACK, blackjackEngine, [
-      { id: ownerSession.token, username: 'Alice' },
-      { id: playerSession.token, username: 'Bob' },
+      { id: ownerSession.playerId, username: 'Alice' },
+      { id: playerSession.playerId, username: 'Bob' },
     ]);
 
     const socket = createMockSocket({ session: { ...ownerSession, roomId: 'room-1' }, authType: 'token' });

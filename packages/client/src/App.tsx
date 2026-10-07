@@ -7,7 +7,7 @@ import { LobbyScreen } from './components/screens/LobbyScreen.js';
 import { RoomScreen } from './components/screens/RoomScreen.js';
 import { GameScreen } from './components/screens/GameScreen.js';
 import { ConnectionOverlay } from './components/ui/ConnectionOverlay.js';
-import type { RoomInfo, RoomState, FilteredGameState } from '@cardpal/shared';
+import type { RoomInfo, RoomState, FilteredGameState, ErrorPayload } from '@cardpal/shared';
 
 export function App() {
   const screen = useAppStore((s) => s.screen);
@@ -32,9 +32,10 @@ export function App() {
 
   // Global socket event listeners
   useEffect(() => {
-    function onAuthenticated({ token, username, roomId }: { token: string; username: string; roomId?: string }) {
+    function onAuthenticated({ token, playerId, username, roomId }: { token: string; playerId: string; username: string; roomId?: string }) {
       const store = useAppStore.getState();
       store.setSessionToken(token);
+      store.setPlayerId(playerId);
       store.setUsername(username);
       store.setConnectionStatus('connected');
       store.setErrorMessage(null);
@@ -50,15 +51,29 @@ export function App() {
       }
     }
 
+    function resetToOtpScreen(message: string) {
+      socket.disconnect(); // stop reconnection attempts with stale auth
+      const store = useAppStore.getState();
+      store.setSessionToken(null);
+      store.setPlayerId(null);
+      store.setPendingSessionId(null);
+      store.setCurrentRoom(null);
+      store.setGameState(null);
+      store.setReconnectFailed(false);
+      store.setScreen('otp');
+      store.setErrorMessage(message);
+    }
+
     function onConnectError(err: Error) {
       if (err.message === 'AUTH_ERROR') {
-        socket.disconnect(); // stop reconnection attempts with stale auth
-        const store = useAppStore.getState();
-        store.setSessionToken(null);
-        store.setScreen('otp');
-        store.setPendingSessionId(null);
-        store.setReconnectFailed(false);
-        store.setErrorMessage('Session expired — please enter a new OTP');
+        resetToOtpScreen('Session expired — please enter a new OTP');
+      }
+    }
+
+    // The server revokes all sessions when the OTP is rotated or expires
+    function onError(err: ErrorPayload) {
+      if (err.code === 'AUTH_ERROR' && useAppStore.getState().sessionToken) {
+        resetToOtpScreen(err.message);
       }
     }
 
@@ -74,8 +89,13 @@ export function App() {
       store.setReconnectFailed(false);
     }
 
-    function onDisconnect() {
+    function onDisconnect(reason: string) {
       useAppStore.getState().setConnectionStatus('disconnected');
+      // socket.io does not auto-reconnect after a server-initiated disconnect (e.g. sessions
+      // revoked). Reconnect once: a stale session is then rejected with AUTH_ERROR above.
+      if (reason === 'io server disconnect' && useAppStore.getState().sessionToken) {
+        socket.connect();
+      }
     }
 
     function onLobbyState({ rooms }: { rooms: RoomInfo[] }) {
@@ -108,6 +128,7 @@ export function App() {
     socket.on('lobbyState', onLobbyState);
     socket.on('roomState', onRoomState);
     socket.on('gameState', onGameState);
+    socket.on('error', onError);
     socket.io.on('reconnect_failed', onReconnectFailed);
 
     return () => {
@@ -118,6 +139,7 @@ export function App() {
       socket.off('lobbyState', onLobbyState);
       socket.off('roomState', onRoomState);
       socket.off('gameState', onGameState);
+      socket.off('error', onError);
       socket.io.off('reconnect_failed', onReconnectFailed);
     };
   }, []);

@@ -16,7 +16,7 @@ export interface ClientToServerEvents {
 }
 
 export interface ServerToClientEvents {
-  authenticated: (session: { token: string; username: string; roomId?: string }) => void;
+  authenticated: (session: { token: string; playerId: string; username: string; roomId?: string }) => void;
   lobbyState: (data: { rooms: RoomInfo[] }) => void;
   roomState: (room: RoomState) => void;
   gameState: (state: FilteredGameState | null) => void;
