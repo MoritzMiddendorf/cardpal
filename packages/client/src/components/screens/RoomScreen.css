@@ -11,6 +11,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
   padding-bottom: 1.5rem;
   border-bottom: 1px solid #0f3460;
 }
@@ -19,6 +20,7 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .room-name {
@@ -42,6 +44,8 @@
 }
 
 .room-player-count {
+  flex-shrink: 0;
+  white-space: nowrap;
   font-size: 0.875rem;
   color: #aaa;
 }
@@ -74,6 +78,8 @@
 .room-player-item {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   padding: 0.75rem 1.25rem;
   background: #16213e;
   border: 1px solid #0f3460;
@@ -169,4 +175,20 @@
   color: #aaa;
   font-size: 0.9375rem;
   margin: 0;
+}
+
+.room-kick-btn {
+  padding: 0.25rem 0.625rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #aaa;
+  background: transparent;
+  border: 1px solid #0f3460;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.room-kick-btn:hover {
+  color: #e94560;
+  border-color: #e94560;
 }

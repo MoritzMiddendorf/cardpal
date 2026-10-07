@@ -46,6 +46,10 @@ export function RoomScreen() {
     socket.emit('changeGameType', { gameType });
   }
 
+  function handleKick(player: PlayerInfo) {
+    socket.emit('kickPlayer', { playerId: player.id });
+  }
+
   function handleStartGame() {
     socket.emit('startGame');
   }
@@ -86,6 +90,15 @@ export function RoomScreen() {
                 <span className="room-player-name">{player.username}</span>
                 {player.isOwner && <span className="room-player-owner">Host</span>}
               </div>
+              {isOwner && player.id !== playerId && (
+                <button
+                  className="room-kick-btn"
+                  onClick={() => handleKick(player)}
+                  title={`Remove ${player.username} from the room`}
+                >
+                  Remove
+                </button>
+              )}
             </li>
           ))}
         </ul>

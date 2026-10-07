@@ -26,6 +26,9 @@ const mockEngine: GameEngine = {
   getWinner(_state) {
     return null;
   },
+  getResults() {
+    return [];
+  },
 };
 
 const testPlayers = [

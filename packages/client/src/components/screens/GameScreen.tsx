@@ -1,5 +1,6 @@
 import { useAppStore } from '../../store/index.js';
 import { socket } from '../../socket/client.js';
+import { RemoveDisconnectedPlayers } from '../ui/RemoveDisconnectedPlayers.js';
 import { AnimatedCard } from '../ui/AnimatedCard.js';
 import { detectNewCards } from '../../utils/cardDiff.js';
 import { SkipBoGameScreen } from './SkipBoGameScreen.js';
@@ -121,10 +122,11 @@ export function GameScreen() {
 
       {/* Pause Banner */}
       {isPaused && pausedForPlayer && (
-        <div className="game-paused-banner">
+        <div className="game-paused-banner" onClick={(e) => e.stopPropagation()}>
           <span className="game-paused-text">
             Game paused — waiting for {pausedForPlayer} to reconnect...
           </span>
+          {isOwner && <RemoveDisconnectedPlayers players={players} />}
         </div>
       )}
 

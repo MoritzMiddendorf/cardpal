@@ -33,6 +33,8 @@ function makeGameInstance(overrides: Partial<GameInstance> = {}): GameInstance {
       getResults: () => [],
     } as GameEngine,
     playerUsernames: usernames,
+    isPaused: false,
+    pausedForPlayerId: null,
     ...overrides,
   };
 }
@@ -85,6 +87,8 @@ function makeBlackjackInstance(overrides: Partial<BlackjackState> = {}): GameIns
     state: bjState,
     engine: mockEngine,
     playerUsernames: usernames,
+    isPaused: false,
+    pausedForPlayerId: null,
   };
 }
 
@@ -440,6 +444,8 @@ function makeSkipBoInstance(overrides: Partial<SkipBoGameState> = {}): GameInsta
     state: sbState,
     engine: mockEngine,
     playerUsernames: usernames,
+    isPaused: false,
+    pausedForPlayerId: null,
   };
 }
 

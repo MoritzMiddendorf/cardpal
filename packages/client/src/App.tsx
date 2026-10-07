@@ -77,6 +77,14 @@ export function App() {
       }
     }
 
+    function onKicked({ roomName }: { roomName: string }) {
+      const store = useAppStore.getState();
+      store.setCurrentRoom(null);
+      store.setGameState(null);
+      store.setScreen('lobby');
+      store.setErrorMessage(`The host removed you from ${roomName}`);
+    }
+
     function onReconnectFailed() {
       const store = useAppStore.getState();
       store.setConnectionStatus('disconnected');
@@ -129,6 +137,7 @@ export function App() {
     socket.on('roomState', onRoomState);
     socket.on('gameState', onGameState);
     socket.on('error', onError);
+    socket.on('kicked', onKicked);
     socket.io.on('reconnect_failed', onReconnectFailed);
 
     return () => {
@@ -140,6 +149,7 @@ export function App() {
       socket.off('roomState', onRoomState);
       socket.off('gameState', onGameState);
       socket.off('error', onError);
+      socket.off('kicked', onKicked);
       socket.io.off('reconnect_failed', onReconnectFailed);
     };
   }, []);

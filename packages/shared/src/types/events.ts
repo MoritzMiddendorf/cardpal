@@ -13,6 +13,8 @@ export interface ClientToServerEvents {
   gameAction: (action: GameAction) => void;
   playAgain: () => void;
   returnToLobby: () => void;
+  /** Room owner removes a player (lobby: anyone; in game: only disconnected players). */
+  kickPlayer: (data: { playerId: string }) => void;
 }
 
 export interface ServerToClientEvents {
@@ -21,4 +23,6 @@ export interface ServerToClientEvents {
   roomState: (room: RoomState) => void;
   gameState: (state: FilteredGameState | null) => void;
   error: (error: ErrorPayload) => void;
+  /** Sent to a player who was removed from their room by the owner. */
+  kicked: (data: { roomName: string }) => void;
 }

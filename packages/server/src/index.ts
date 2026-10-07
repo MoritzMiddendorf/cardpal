@@ -122,6 +122,18 @@ io.use(authMiddleware);
 // Socket.io connection handler
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
+
+  // socket.data.session is a snapshot; refresh it before every event so changes made
+  // on behalf of this player by others (e.g. being kicked) are seen by the handlers
+  socket.use((_packet, next) => {
+    if (socket.data.session) {
+      const fresh = getSessionByToken(socket.data.session.token);
+      if (fresh) socket.data.session = fresh;
+      else delete socket.data.session;
+    }
+    next();
+  });
+
   registerAuthHandlers(socket, io);
   registerLobbyHandlers(socket, io);
   registerGameHandlers(socket, io);

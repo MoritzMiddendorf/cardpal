@@ -7,7 +7,10 @@
     "dev": "concurrently -n client,server -c blue,green \"pnpm --filter @cardpal/client dev\" \"pnpm --filter @cardpal/server dev\"",
     "build": "pnpm --filter @cardpal/shared build && pnpm --filter @cardpal/client build && pnpm --filter @cardpal/server build",
     "start": "pnpm --filter @cardpal/server start",
-    "generate-otp": "tsx scripts/generate-otp.ts"
+    "generate-otp": "tsx scripts/generate-otp.ts",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "smoke-test": "tsx scripts/smoke-test.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -16,6 +19,7 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.5",
+    "socket.io-client": "^4.8.4",
     "tsx": "^4.23.15",
     "typescript": "~7.0.2"
   },

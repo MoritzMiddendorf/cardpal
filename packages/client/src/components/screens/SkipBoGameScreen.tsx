@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useAppStore } from '../../store/index.js';
 import { socket } from '../../socket/client.js';
+import { RemoveDisconnectedPlayers } from '../ui/RemoveDisconnectedPlayers.js';
 import { SkipBoCard } from '../ui/SkipBoCard.js';
 import { SkipBoPile } from '../ui/SkipBoPile.js';
 import {
@@ -189,10 +190,11 @@ export function SkipBoGameScreen() {
 
       {/* Pause Banner */}
       {isPaused && pausedForPlayer && (
-        <div className="skipbo-paused-banner">
+        <div className="skipbo-paused-banner" onClick={(e) => e.stopPropagation()}>
           <span className="skipbo-paused-text">
             Game paused — waiting for {pausedForPlayer} to reconnect...
           </span>
+          {isOwner && <RemoveDisconnectedPlayers players={players} />}
         </div>
       )}
 

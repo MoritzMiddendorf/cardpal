@@ -1,5 +1,5 @@
 import { usernameRequestSchema } from '@cardpal/shared';
-import { createSession, getSessionByToken, updateSessionSocketId } from '../../state/sessions.js';
+import { createSession, getSessionByToken, updateSessionSocketId, isUsernameTaken } from '../../state/sessions.js';
 import { isOtpValid } from '../../state/otp.js';
 import { setPlayerConnected, getRoomById, toRoomState } from '../../state/rooms.js';
 import { getGame } from '../../state/games.js';
@@ -23,6 +23,11 @@ export function handleSetUsername(
   const pendingSessionId = socket.data.pendingSessionId;
   if (!pendingSessionId) {
     socket.emit('error', { code: 'AUTH_ERROR', message: 'No pending session' });
+    return;
+  }
+
+  if (isUsernameTaken(result.data.username)) {
+    socket.emit('error', { code: 'VALIDATION_ERROR', message: 'That name is already taken' });
     return;
   }
 

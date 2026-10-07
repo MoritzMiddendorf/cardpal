@@ -73,6 +73,15 @@ export function getSessionByToken(token: string): UserSession | null {
   return session ? { ...session } : null;
 }
 
+/** Case-insensitive check whether a username is already used by a live session. */
+export function isUsernameTaken(username: string): boolean {
+  const wanted = username.toLowerCase();
+  for (const session of sessions.values()) {
+    if (session.username.toLowerCase() === wanted) return true;
+  }
+  return false;
+}
+
 export function getSessionByPlayerId(playerId: string): UserSession | null {
   for (const session of sessions.values()) {
     if (session.playerId === playerId) return { ...session };
