@@ -1,0 +1,46 @@
+name: Deploy check
+
+# Northflank builds and deploys every push to main by itself (CI/CD on the service).
+# This workflow confirms that the commit CI just validated actually went live:
+# it polls the production /api/health until it reports that commit.
+# Set the repository variable CARDPAL_URL (Settings → Secrets and variables → Actions → Variables)
+# to enable it; without it the job is skipped.
+
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-check
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: Production runs the latest main
+    if: vars.CARDPAL_URL != '' && (github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Wait for the deployment
+        env:
+          URL: ${{ vars.CARDPAL_URL }}
+          EXPECTED: ${{ github.event.workflow_run.head_sha || github.sha }}
+        run: |
+          echo "Waiting for $URL to report version $EXPECTED"
+          for i in $(seq 1 80); do
+            version=$(curl -fsS --max-time 10 "${URL%/}/api/health" | jq -r '.version // empty' || true)
+            if [ "$version" = "$EXPECTED" ]; then
+              echo "Deployed: $version"
+              exit 0
+            fi
+            echo "Attempt $i: live version is '${version:-unreachable}'"
+            sleep 15
+          done
+          echo "::error::$URL did not report $EXPECTED within 20 minutes. Check the build/deploy logs in Northflank."
+          exit 1

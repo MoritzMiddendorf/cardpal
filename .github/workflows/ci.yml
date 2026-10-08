@@ -40,7 +40,7 @@ jobs:
         run: pnpm smoke-test
 
   docker:
-    name: Docker image builds
+    name: Docker image builds and runs
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -50,5 +50,28 @@ jobs:
         with:
           context: .
           push: false
+          load: true
+          tags: cardpal:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # Run the smoke test against the production image itself, exactly as it will be deployed
+      - name: Start container
+        run: docker run -d --name cardpal -p 3001:3001 -e ADMIN_SECRET=ci-secret cardpal:ci
+
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+
+      - name: Smoke test against the container
+        run: pnpm smoke-test
+        env:
+          SMOKE_TEST_URL: http://localhost:3001
+          SMOKE_TEST_ADMIN_SECRET: ci-secret
+
+      - name: Container logs
+        if: always()
+        run: docker logs cardpal

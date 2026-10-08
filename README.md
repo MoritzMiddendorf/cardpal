@@ -39,7 +39,18 @@ Without Docker: `pnpm install && pnpm build && pnpm start`.
 
 ### Hosting
 
-Recommended: **Northflank** free Developer Sandbox — always-on (no sleeping), deploys the `Dockerfile` straight from GitHub. Create a service from this repo, build type *Dockerfile*, port `3001` (HTTP, public), and set `ADMIN_SECRET` as a secret.
+Recommended: **Northflank** free Developer Sandbox — always-on (no sleeping), builds the `Dockerfile` straight from GitHub.
+
+1. Create a **combined service** from this repo, branch `main`, build type *Dockerfile* (path `/Dockerfile`, context `/`).
+2. Networking: port `3001`, protocol HTTP, **public**.
+3. Environment: add `ADMIN_SECRET` (long random string) as a runtime variable.
+4. Health check (optional): HTTP `GET /api/health` on port `3001`.
+5. Keep **CI** and **CD** enabled: every push to `main` is built and deployed automatically.
+
+Continuous deployment: changes only reach `main` through PRs with green CI, and Northflank deploys each new `main` commit.
+The *Deploy check* workflow then waits for `/api/health` to report that commit (`version`, from Northflank's
+`NF_DEPLOYMENT_SHA`) and goes red if it doesn't go live within 20 minutes. Enable it by setting the repository
+variable `CARDPAL_URL` to the public URL. Every deploy restarts the server, which clears the OTP and all games.
 
 Fallback: **Render** free web service (also from the `Dockerfile`). It sleeps after 15 minutes without traffic and loses all in-memory state (including the OTP); open websocket connections keep it awake during play.
 
@@ -47,6 +58,7 @@ Fallback: **Render** free web service (also from the `Dockerfile`). It sleeps af
 |---|---|---|
 | `PORT` | `3001` | HTTP/WebSocket port |
 | `ADMIN_SECRET` | unset | **Required when deployed.** Bearer secret for OTP generation. Without it, OTPs can only be generated from localhost. |
+| `GIT_SHA` | unset | Commit reported by `/api/health`; on Northflank `NF_DEPLOYMENT_SHA` is used automatically |
 | `OTP_VALIDITY_HOURS` | `12` | How long an access code (and every session created with it) stays valid |
 
 Generate a code against a deployed server:

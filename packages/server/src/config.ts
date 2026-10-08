@@ -13,3 +13,6 @@ export const ADMIN_SECRET = process.env['ADMIN_SECRET'] || null;
 /** OTP validation attempts allowed per client IP per window (brute-force protection). */
 export const OTP_ATTEMPTS_PER_WINDOW = 10;
 export const OTP_ATTEMPT_WINDOW_MS = 10 * 60 * 1000;
+
+/** Commit the running build was made from, reported by /api/health. Northflank injects NF_DEPLOYMENT_SHA. */
+export const DEPLOYED_VERSION = process.env['GIT_SHA'] || process.env['NF_DEPLOYMENT_SHA'] || null;
