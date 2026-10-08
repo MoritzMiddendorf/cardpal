@@ -4,6 +4,7 @@ import { socket } from '../../socket/client.js';
 import { RemoveDisconnectedPlayers } from '../ui/RemoveDisconnectedPlayers.js';
 import { SkipBoCard } from '../ui/SkipBoCard.js';
 import { SkipBoPile } from '../ui/SkipBoPile.js';
+import { TopBar } from '../ui/TopBar.js';
 import {
   getNextNeededValue,
   getActionsForSource as getActionsForSourceHelper,
@@ -159,168 +160,171 @@ export function SkipBoGameScreen() {
   const activePlayerName = activePlayer?.id === myPlayerId ? 'Your' : `${activePlayer?.username ?? 'Unknown'}'s`;
 
   return (
-    <div className="skipbo-game" onClick={handleBackgroundClick}>
-      {/* Results Overlay */}
-      {isFinished && results && (
-        <div className="skipbo-results" onClick={(e) => e.stopPropagation()}>
-          <h2 className="skipbo-results-title">Game Over</h2>
-          <div className="skipbo-results-list">
-            {results.map((r: PlayerResult) => (
-              <div key={r.playerId} className={`skipbo-result-item skipbo-result-${r.result}`}>
-                <span className="skipbo-result-name">
-                  {r.playerId === myPlayerId ? 'You' : r.username}
-                </span>
-                <span className="skipbo-result-badge">{resultLabel(r.result)}</span>
-                <span className="skipbo-result-stock">Remaining Stock: {r.handValue}</span>
-              </div>
-            ))}
-          </div>
-          <div className="skipbo-results-actions">
-            {isOwner && (
-              <button className="skipbo-play-again-btn" onClick={handlePlayAgain}>
-                Play Again
+    <div className="skipbo-game app-page" onClick={handleBackgroundClick}>
+      <TopBar context={currentRoom ? `${currentRoom.name} · Skip-Bo` : 'Skip-Bo'} />
+      <main className="app-main skipbo-table">
+        {/* Results Overlay */}
+        {isFinished && results && (
+          <div className="skipbo-results" onClick={(e) => e.stopPropagation()}>
+            <h2 className="skipbo-results-title">Game Over</h2>
+            <div className="skipbo-results-list">
+              {results.map((r: PlayerResult) => (
+                <div key={r.playerId} className={`skipbo-result-item skipbo-result-${r.result}`}>
+                  <span className="skipbo-result-name">
+                    {r.playerId === myPlayerId ? 'You' : r.username}
+                  </span>
+                  <span className="skipbo-result-badge">{resultLabel(r.result)}</span>
+                  <span className="skipbo-result-stock">Remaining Stock: {r.handValue}</span>
+                </div>
+              ))}
+            </div>
+            <div className="skipbo-results-actions">
+              {isOwner && (
+                <button className="skipbo-play-again-btn" onClick={handlePlayAgain}>
+                  Play Again
+                </button>
+              )}
+              <button className="skipbo-return-lobby-btn" onClick={handleReturnToLobby}>
+                Return to Lobby
               </button>
-            )}
-            <button className="skipbo-return-lobby-btn" onClick={handleReturnToLobby}>
-              Return to Lobby
-            </button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Pause Banner */}
-      {isPaused && pausedForPlayer && (
-        <div className="skipbo-paused-banner" onClick={(e) => e.stopPropagation()}>
-          <span className="skipbo-paused-text">
-            Game paused — waiting for {pausedForPlayer} to reconnect...
-          </span>
-          {isOwner && <RemoveDisconnectedPlayers players={players} />}
-        </div>
-      )}
+        {/* Pause Banner */}
+        {isPaused && pausedForPlayer && (
+          <div className="skipbo-paused-banner" onClick={(e) => e.stopPropagation()}>
+            <span className="skipbo-paused-text">
+              Game paused — waiting for {pausedForPlayer} to reconnect...
+            </span>
+            {isOwner && <RemoveDisconnectedPlayers players={players} />}
+          </div>
+        )}
 
-      {/* Turn Indicator */}
-      {!isFinished && (
-        <div className={`skipbo-turn-banner${isMyTurn ? ' skipbo-turn-mine' : ''}`}>
-          {activePlayerName} turn
-        </div>
-      )}
+        {/* Turn Indicator */}
+        {!isFinished && (
+          <div className={`skipbo-turn-banner${isMyTurn ? ' skipbo-turn-mine' : ''}`}>
+            {activePlayerName} turn
+          </div>
+        )}
 
-      {/* Other Players */}
-      <div className="skipbo-other-players">
-        {otherPlayers.map((player) => {
-          const skipBoPlayer = otherSkipBoPlayers.find((p) => p.playerId === player.id);
-          if (!skipBoPlayer) return null;
-          return (
-            <div
-              key={player.id}
-              className={`skipbo-opponent${player.isActive ? ' skipbo-opponent-active' : ''}${!player.isConnected ? ' skipbo-opponent-disconnected' : ''}`}
-            >
-              <div className="skipbo-opponent-header">
-                <span
-                  className={`skipbo-status-dot${player.isConnected ? ' skipbo-status-dot-connected' : ''}`}
-                  title={player.isConnected ? 'Connected' : 'Disconnected'}
-                />
-                <span className="skipbo-opponent-name">{player.username}</span>
-              </div>
-              <div className="skipbo-opponent-piles">
-                <SkipBoPile pile={skipBoPlayer.stockPile} label="Stock" />
-                <div className="skipbo-opponent-hand-backs">
-                  {Array.from({ length: skipBoPlayer.handCount }, (_, i) => (
-                    <SkipBoCard key={i} card={{ value: 0, isWild: false, faceUp: false }} />
+        {/* Other Players */}
+        <div className="skipbo-other-players">
+          {otherPlayers.map((player) => {
+            const skipBoPlayer = otherSkipBoPlayers.find((p) => p.playerId === player.id);
+            if (!skipBoPlayer) return null;
+            return (
+              <div
+                key={player.id}
+                className={`skipbo-opponent${player.isActive ? ' skipbo-opponent-active' : ''}${!player.isConnected ? ' skipbo-opponent-disconnected' : ''}`}
+              >
+                <div className="skipbo-opponent-header">
+                  <span
+                    className={`skipbo-status-dot${player.isConnected ? ' skipbo-status-dot-connected' : ''}`}
+                    title={player.isConnected ? 'Connected' : 'Disconnected'}
+                  />
+                  <span className="skipbo-opponent-name">{player.username}</span>
+                </div>
+                <div className="skipbo-opponent-piles">
+                  <SkipBoPile pile={skipBoPlayer.stockPile} label="Stock" />
+                  <div className="skipbo-opponent-hand-backs">
+                    {Array.from({ length: skipBoPlayer.handCount }, (_, i) => (
+                      <SkipBoCard key={i} card={{ value: 0, isWild: false, faceUp: false }} />
+                    ))}
+                  </div>
+                  {skipBoPlayer.discardPiles.map((dp, di) => (
+                    <SkipBoPile key={di} pile={dp} label={`D${di + 1}`} />
                   ))}
                 </div>
-                {skipBoPlayer.discardPiles.map((dp, di) => (
-                  <SkipBoPile key={di} pile={dp} label={`D${di + 1}`} />
-                ))}
               </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Center Area: Building Piles */}
-      <div className="skipbo-center" onClick={(e) => e.stopPropagation()}>
-        <div className="skipbo-building-piles">
-          {buildingPiles.map((pile, i) => {
-            const needed = getNextNeededValue(pile);
-            return (
-              <SkipBoPile
-                key={i}
-                pile={pile}
-                needsValue={needed <= 12 ? needed : null}
-                highlighted={isBuildingPileTarget(i)}
-                onClick={() => handleBuildingPileClick(i)}
-              />
             );
           })}
         </div>
-        <div className="skipbo-draw-info">Draw pile: {drawPileCount}</div>
-      </div>
 
-      {/* My Area */}
-      <div className={`skipbo-my-area${myInfo?.isActive ? ' skipbo-my-area-active' : ''}`} onClick={(e) => e.stopPropagation()}>
-        <div className="skipbo-my-label">
-          You
-          {myResult && (
-            <span className={`skipbo-result-inline skipbo-result-${myResult.result}`}>
-              {resultLabel(myResult.result)}
-            </span>
-          )}
+        {/* Center Area: Building Piles */}
+        <div className="skipbo-center" onClick={(e) => e.stopPropagation()}>
+          <div className="skipbo-building-piles">
+            {buildingPiles.map((pile, i) => {
+              const needed = getNextNeededValue(pile);
+              return (
+                <SkipBoPile
+                  key={i}
+                  pile={pile}
+                  needsValue={needed <= 12 ? needed : null}
+                  highlighted={isBuildingPileTarget(i)}
+                  onClick={() => handleBuildingPileClick(i)}
+                />
+              );
+            })}
+          </div>
+          <div className="skipbo-draw-info">Draw pile: {drawPileCount}</div>
         </div>
 
-        <div className="skipbo-my-layout">
-          {/* Stock Pile */}
-          <div className="skipbo-my-stock" onClick={() => handleSourceClick({ type: 'stock' })}>
-            <SkipBoPile
-              pile={myStockPile}
-              label="Stock"
-              highlighted={isMyTurn && sourceHasActions({ type: 'stock' })}
-            />
-            {selectedSource?.type === 'stock' && (
-              <div className="skipbo-selection-indicator" />
+        {/* My Area */}
+        <div className={`skipbo-my-area${myInfo?.isActive ? ' skipbo-my-area-active' : ''}`} onClick={(e) => e.stopPropagation()}>
+          <div className="skipbo-my-label">
+            You
+            {myResult && (
+              <span className={`skipbo-result-inline skipbo-result-${myResult.result}`}>
+                {resultLabel(myResult.result)}
+              </span>
             )}
           </div>
 
-          {/* Hand Cards */}
-          <div className="skipbo-my-hand">
-            {myHand.map((card, i) => (
-              <SkipBoCard
-                key={i}
-                card={card}
-                highlighted={isMyTurn && sourceHasActions({ type: 'hand', handIndex: i })}
-                selected={selectedSource?.type === 'hand' && selectedSource.handIndex === i}
-                onClick={() => handleSourceClick({ type: 'hand', handIndex: i })}
+          <div className="skipbo-my-layout">
+            {/* Stock Pile */}
+            <div className="skipbo-my-stock" onClick={() => handleSourceClick({ type: 'stock' })}>
+              <SkipBoPile
+                pile={myStockPile}
+                label="Stock"
+                highlighted={isMyTurn && sourceHasActions({ type: 'stock' })}
               />
-            ))}
-          </div>
+              {selectedSource?.type === 'stock' && (
+                <div className="skipbo-selection-indicator" />
+              )}
+            </div>
 
-          {/* Discard Piles */}
-          <div className="skipbo-my-discards">
-            {myDiscardPiles.map((pile, i) => (
-              <div key={i} className="skipbo-my-discard-slot">
-                <SkipBoPile
-                  pile={pile}
-                  label={`D${i + 1}`}
-                  highlighted={
-                    isDiscardPileTarget(i) ||
-                    (isMyTurn && !selectedSource && sourceHasActions({ type: 'discard', discardPileIndex: i }))
-                  }
-                  onClick={() => {
-                    if (isDiscardPileTarget(i)) {
-                      handleDiscardPileClick(i);
-                    } else {
-                      handleSourceClick({ type: 'discard', discardPileIndex: i });
-                    }
-                  }}
+            {/* Hand Cards */}
+            <div className="skipbo-my-hand">
+              {myHand.map((card, i) => (
+                <SkipBoCard
+                  key={i}
+                  card={card}
+                  highlighted={isMyTurn && sourceHasActions({ type: 'hand', handIndex: i })}
+                  selected={selectedSource?.type === 'hand' && selectedSource.handIndex === i}
+                  onClick={() => handleSourceClick({ type: 'hand', handIndex: i })}
                 />
-                {selectedSource?.type === 'discard' && selectedSource.discardPileIndex === i && (
-                  <div className="skipbo-selection-indicator" />
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
+
+            {/* Discard Piles */}
+            <div className="skipbo-my-discards">
+              {myDiscardPiles.map((pile, i) => (
+                <div key={i} className="skipbo-my-discard-slot">
+                  <SkipBoPile
+                    pile={pile}
+                    label={`D${i + 1}`}
+                    highlighted={
+                      isDiscardPileTarget(i) ||
+                      (isMyTurn && !selectedSource && sourceHasActions({ type: 'discard', discardPileIndex: i }))
+                    }
+                    onClick={() => {
+                      if (isDiscardPileTarget(i)) {
+                        handleDiscardPileClick(i);
+                      } else {
+                        handleSourceClick({ type: 'discard', discardPileIndex: i });
+                      }
+                    }}
+                  />
+                  {selectedSource?.type === 'discard' && selectedSource.discardPileIndex === i && (
+                    <div className="skipbo-selection-indicator" />
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

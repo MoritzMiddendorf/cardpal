@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/index.js';
 import { socket } from '../../socket/client.js';
 import { GameType } from '@cardpal/shared';
 import type { RoomInfo, ErrorPayload } from '@cardpal/shared';
+import { TopBar } from '../ui/TopBar.js';
 import './LobbyScreen.css';
 
 const GAME_TYPE_LABELS: Record<GameType, string> = {
@@ -10,11 +11,15 @@ const GAME_TYPE_LABELS: Record<GameType, string> = {
   [GameType.SKIPBO]: 'Skip-Bo',
 };
 
+const GAME_TYPE_DESCRIPTIONS: Record<GameType, string> = {
+  [GameType.BLACKJACK]: '2–4 players · beat the dealer to 21',
+  [GameType.SKIPBO]: '2–6 players · empty your stock pile first',
+};
+
 const GAME_TYPES = [GameType.BLACKJACK, GameType.SKIPBO] as const;
 
 export function LobbyScreen() {
   const lobbyRooms = useAppStore((s) => s.lobbyRooms);
-  const username = useAppStore((s) => s.username);
   const notice = useAppStore((s) => s.errorMessage);
 
   const [isCreating, setIsCreating] = useState(false);
@@ -66,16 +71,16 @@ export function LobbyScreen() {
   }
 
   return (
-    <div className="lobby-screen">
-      <header className="lobby-header">
-        <h1 className="lobby-title">cardpal</h1>
-        <span className="lobby-username">{username}</span>
-      </header>
+    <div className="lobby-screen app-page">
+      <TopBar context="Lobby" />
 
-      <div className="lobby-content">
+      <main className="app-main lobby-content">
         {notice && <p className="lobby-notice">{notice}</p>}
         <div className="lobby-rooms-header">
-          <h2 className="lobby-rooms-title">Game Rooms</h2>
+          <div>
+            <h1 className="lobby-rooms-title">Game Rooms</h1>
+            <p className="lobby-rooms-subtitle">Join an open table or start your own.</p>
+          </div>
           {!isCreating ? (
             <button className="lobby-create-btn" onClick={handleCreateClick}>
               Create Room
@@ -88,8 +93,8 @@ export function LobbyScreen() {
         </div>
 
         {isCreating && (
-          <div className="lobby-game-picker">
-            <p className="lobby-picker-label">Choose a game:</p>
+          <div className="lobby-game-picker app-panel">
+            <p className="app-panel-title">Choose a game</p>
             <div className="lobby-picker-options">
               {GAME_TYPES.map((gt) => (
                 <button
@@ -98,7 +103,8 @@ export function LobbyScreen() {
                   onClick={() => handlePickGameType(gt)}
                   disabled={isSubmitting}
                 >
-                  {GAME_TYPE_LABELS[gt]}
+                  <span className="lobby-picker-name">{GAME_TYPE_LABELS[gt]}</span>
+                  <span className="lobby-picker-desc">{GAME_TYPE_DESCRIPTIONS[gt]}</span>
                 </button>
               ))}
             </div>
@@ -107,30 +113,36 @@ export function LobbyScreen() {
         )}
 
         {lobbyRooms.length === 0 ? (
-          <p className="lobby-empty">No rooms yet. Create one!</p>
+          <div className="lobby-empty">
+            <p className="lobby-empty-title">No rooms yet</p>
+            <p className="lobby-empty-text">Create one and your friends will see it here.</p>
+          </div>
         ) : (
           <ul className="lobby-room-list">
             {lobbyRooms.map((room: RoomInfo) => {
               const isPlaying = room.status === 'playing';
               const isFull = room.playerCount >= room.maxPlayers;
               const canJoin = !isPlaying && !isFull && !isJoining;
+              const statusLabel = isPlaying ? 'In progress' : isFull ? 'Full' : 'Open';
               return (
                 <li
                   key={room.id}
-                  className={`lobby-room-item${canJoin ? ' lobby-room-joinable' : ''}${isPlaying ? ' lobby-room-disabled' : ''}`}
+                  className={`lobby-room-item${canJoin ? ' lobby-room-joinable' : ''}${isPlaying || isFull ? ' lobby-room-disabled' : ''}`}
                   onClick={canJoin ? () => handleJoinRoom(room.id) : undefined}
                 >
-                  <div className="lobby-room-info">
-                    <span className="lobby-room-name">{room.name}</span>
-                    <span className="lobby-room-type">
-                      {GAME_TYPE_LABELS[room.gameType]}
-                      {isPlaying && <span className="lobby-room-status"> — In Progress</span>}
-                      {isFull && !isPlaying && <span className="lobby-room-status"> — Full</span>}
+                  <div className="lobby-room-top">
+                    <span className="lobby-room-type">{GAME_TYPE_LABELS[room.gameType]}</span>
+                    <span className={`lobby-room-status lobby-room-status-${isPlaying ? 'playing' : isFull ? 'full' : 'open'}`}>
+                      {statusLabel}
                     </span>
                   </div>
-                  <span className="lobby-room-players">
-                    {room.playerCount}/{room.maxPlayers} players
-                  </span>
+                  <span className="lobby-room-name">{room.name}</span>
+                  <div className="lobby-room-bottom">
+                    <span className="lobby-room-players">
+                      {room.playerCount}/{room.maxPlayers} players
+                    </span>
+                    {canJoin && <span className="lobby-room-join">Join →</span>}
+                  </div>
                 </li>
               );
             })}
@@ -140,7 +152,7 @@ export function LobbyScreen() {
         {!isCreating && errorMessage && (
           <p className="lobby-join-error">{errorMessage}</p>
         )}
-      </div>
+      </main>
     </div>
   );
 }

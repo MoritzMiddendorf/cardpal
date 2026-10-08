@@ -22,8 +22,11 @@ export function Card({ card }: CardProps) {
 
   return (
     <div className={`card card-face ${suitClass}`}>
-      <span className="card-rank">{card.rank}</span>
-      <span className="card-suit">{SUIT_SYMBOLS[card.suit]}</span>
+      <span className="card-index">
+        <span className="card-rank">{card.rank}</span>
+        <span className="card-suit">{SUIT_SYMBOLS[card.suit]}</span>
+      </span>
+      <span className="card-pip">{SUIT_SYMBOLS[card.suit]}</span>
     </div>
   );
 }
