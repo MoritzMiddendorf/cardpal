@@ -9,7 +9,9 @@ the top of the log when a decision changes; keep "Current status" up to date.
 - All 22 stories in `sprint-status.yaml` (epics 1–5: auth, lobby, Blackjack, connection resilience,
   Skip-Bo) are implemented. The project sat dormant for months, was revived on 2026-10-07 and merged
   to `main` via PR #1.
-- **Not deployed yet.** No one has played it with real people. Next milestone: first try-out with friends.
+- **Deployed** on Northflank since 2026-10-08: https://p01--cardpal--b4kg79kl4tgd.code.run (auto-deploys `main`,
+  see D10; a merge was live ~45 s later). No one has played it with real people yet. Next milestone: first
+  try-out with friends.
 - CI (`.github/workflows/ci.yml`) runs on every push/PR: build → typecheck (incl. test files) → unit
   tests → `pnpm smoke-test` (boots the real server, two simulated players) → Docker build, then the same
   smoke test against the running production container. Keep it green.
@@ -18,8 +20,7 @@ the top of the log when a decision changes; keep "Current status" up to date.
 
 ### Open items, in rough priority
 
-1. **Deploy to Northflank** (see D1, D10). Owner action: create the service, set `ADMIN_SECRET`, and set the
-   GitHub repo variable `CARDPAL_URL` to the public URL.
+1. Owner action: set the GitHub repo variable `CARDPAL_URL` to the public URL so the deploy check runs (D10).
 2. First try-out, then fix whatever real usage reveals ("UI polish based on real usage" in the PRD).
 3. Skip-Bo has no card-movement animations (FR37/FR38 are only met for Blackjack). Accepted for the
    first try-out; a candidate story afterwards.
