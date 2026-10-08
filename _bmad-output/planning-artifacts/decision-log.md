@@ -4,25 +4,42 @@ Read this before planning or implementing anything. It records decisions made **
 architecture and epics were written, and where they differ, **this file wins**. Add new entries at
 the top of the log when a decision changes; keep "Current status" up to date.
 
-## Current status (2026-10-07)
+## Current status (2026-10-08)
 
 - All 22 stories in `sprint-status.yaml` (epics 1–5: auth, lobby, Blackjack, connection resilience,
   Skip-Bo) are implemented. The project sat dormant for months, was revived on 2026-10-07 and merged
   to `main` via PR #1.
 - **Not deployed yet.** No one has played it with real people. Next milestone: first try-out with friends.
 - CI (`.github/workflows/ci.yml`) runs on every push/PR: build → typecheck (incl. test files) → unit
-  tests → `pnpm smoke-test` (boots the real server, two simulated players) → Docker build. Keep it green.
+  tests → `pnpm smoke-test` (boots the real server, two simulated players) → Docker build, then the same
+  smoke test against the running production container. Keep it green.
+- 2026-10-08 readiness review: ready for the first try-out; nothing blocks it in the code. See D10 for deploys.
 - Dependabot opens weekly npm PRs and monthly actions/Docker PRs.
 
 ### Open items, in rough priority
 
-1. **Deploy to Northflank** (see D1). Owner action: create the service and set `ADMIN_SECRET`.
+1. **Deploy to Northflank** (see D1, D10). Owner action: create the service, set `ADMIN_SECRET`, and set the
+   GitHub repo variable `CARDPAL_URL` to the public URL.
 2. First try-out, then fix whatever real usage reveals ("UI polish based on real usage" in the PRD).
 3. Skip-Bo has no card-movement animations (FR37/FR38 are only met for Blackjack). Accepted for the
    first try-out; a candidate story afterwards.
 4. Post-MVP per PRD: Lovecraft Letter (third game).
 
 ## Decisions
+
+### D10 — Continuous deployment from `main` · 2026-10-08
+
+- **Decision:** Northflank's own GitHub integration builds and deploys every commit on `main` (service CI + CD
+  toggles on). No registry or API token in GitHub. `main` only changes through PRs with green CI (D9), so that
+  is the gate.
+- **Verification:** `.github/workflows/deploy-check.yml` runs after CI succeeds on a push to `main` and polls
+  `$CARDPAL_URL/api/health` until its `version` equals the commit (Northflank injects `NF_DEPLOYMENT_SHA`;
+  `GIT_SHA` overrides it on other hosts). Red = the deploy failed or is stuck. Skipped while the repo variable
+  `CARDPAL_URL` is unset.
+- **CI runs the real image:** the Docker job loads the image, starts it and runs `pnpm smoke-test` against it
+  (`SMOKE_TEST_URL`), so a broken image (missing client files, bad paths) fails CI before it can be deployed.
+- **Implication:** every merge to `main` (including Dependabot PRs) restarts the server and wipes the OTP and all
+  games. Don't merge while friends are playing.
 
 ### D1 — Hosting: Northflank free Developer Sandbox (replaces Render) · 2026-10-07
 

@@ -6,7 +6,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ClientToServerEvents, ServerToClientEvents } from '@cardpal/shared';
 import { GameType, otpValidationRequestSchema } from '@cardpal/shared';
-import { PORT, ADMIN_SECRET, OTP_ATTEMPTS_PER_WINDOW, OTP_ATTEMPT_WINDOW_MS } from './config.js';
+import { PORT, ADMIN_SECRET, DEPLOYED_VERSION, OTP_ATTEMPTS_PER_WINDOW, OTP_ATTEMPT_WINDOW_MS } from './config.js';
 import { generateOtpCode } from './utils/generateOtp.js';
 import { isAdminRequest } from './utils/adminAuth.js';
 import { createRateLimiter } from './utils/rateLimiter.js';
@@ -64,7 +64,7 @@ function revokeAllAccess(server: AppServer, message: string): void {
 
 // Health check
 app.get('/api/health', (_req, res) => {
-  res.json({ status: 'ok' });
+  res.json({ status: 'ok', version: DEPLOYED_VERSION });
 });
 
 // Admin: Generate OTP

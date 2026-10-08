@@ -3,21 +3,28 @@
 // a disconnect/reconnect, a host kick and an OTP rotation.
 //
 //   pnpm build && pnpm smoke-test
+//
+// Against an already running server (e.g. the Docker image in CI) instead of booting one:
+//
+//   SMOKE_TEST_URL=http://localhost:3001 SMOKE_TEST_ADMIN_SECRET=... pnpm smoke-test
 
 import { spawn } from 'node:child_process';
 import { io, type Socket } from 'socket.io-client';
 
+const EXTERNAL_URL = process.env['SMOKE_TEST_URL'];
 const PORT = 3990 + Math.floor(Math.random() * 9);
-const BASE = `http://localhost:${PORT}`;
-const ADMIN_SECRET = 'smoke-test-secret';
+const BASE = EXTERNAL_URL ?? `http://localhost:${PORT}`;
+const ADMIN_SECRET = (EXTERNAL_URL && process.env['SMOKE_TEST_ADMIN_SECRET']) || 'smoke-test-secret';
 
-const server = spawn(process.execPath, ['packages/server/dist/index.js'], {
-  env: { ...process.env, PORT: String(PORT), ADMIN_SECRET },
-  stdio: ['ignore', 'pipe', 'pipe'],
-});
-let serverLog = '';
-server.stdout.on('data', (d: Buffer) => (serverLog += d.toString()));
-server.stderr.on('data', (d: Buffer) => (serverLog += d.toString()));
+const server = EXTERNAL_URL
+  ? null
+  : spawn(process.execPath, ['packages/server/dist/index.js'], {
+      env: { ...process.env, PORT: String(PORT), ADMIN_SECRET },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+let serverLog = EXTERNAL_URL ? `(external server at ${EXTERNAL_URL}; check its own logs)` : '';
+server?.stdout.on('data', (d: Buffer) => (serverLog += d.toString()));
+server?.stderr.on('data', (d: Buffer) => (serverLog += d.toString()));
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let failures = 0;
@@ -61,6 +68,9 @@ async function main(): Promise<void> {
     } catch { /* not up yet */ }
     await sleep(100);
   }
+
+  const index = await fetch(`${BASE}/`);
+  check(index.ok && (await index.text()).includes('<div id="root">'), 'client app is served');
 
   check((await generateOtp('wrong')).status === 401, 'admin endpoint rejects a wrong secret');
   const { code } = (await (await generateOtp()).json()) as { code: string };
@@ -120,7 +130,7 @@ try {
   failures++;
   console.error(err);
 } finally {
-  server.kill();
+  server?.kill();
 }
 
 if (failures > 0) {
