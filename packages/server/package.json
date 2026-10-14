@@ -13,9 +13,9 @@
   },
   "dependencies": {
     "@cardpal/shared": "workspace:*",
-    "express": "^5.2.1",
+    "express": "^5.3.0",
     "socket.io": "^4.8.4",
-    "zod": "^4.6.5"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
