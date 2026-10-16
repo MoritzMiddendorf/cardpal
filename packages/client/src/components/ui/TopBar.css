@@ -1,0 +1,63 @@
+.top-bar {
+  background: #111a33;
+  border-bottom: 1px solid #0f3460;
+}
+
+.top-bar-inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  max-width: 1120px;
+  height: 56px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+}
+
+.top-bar-left {
+  display: flex;
+  align-items: baseline;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.top-bar-brand {
+  font-size: 1.375rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #eaeaea;
+}
+
+.top-bar-context {
+  font-size: 0.9375rem;
+  color: #8a93ad;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-bar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  flex-shrink: 0;
+}
+
+.top-bar-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #e94560;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.top-bar-username {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #cfd3e0;
+}

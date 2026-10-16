@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/index.js';
 import { socket } from '../../socket/client.js';
 import { GameType } from '@cardpal/shared';
 import type { PlayerInfo } from '@cardpal/shared';
+import { TopBar } from '../ui/TopBar.js';
 import './RoomScreen.css';
 
 const GAME_TYPE_LABELS: Record<GameType, string> = {
@@ -54,11 +55,58 @@ export function RoomScreen() {
     socket.emit('startGame');
   }
 
+  const openSeats = Math.max(0, maxPlayers - playerCount);
+  const countHint = playerCount < minPlayers
+    ? `Waiting for ${minPlayers - playerCount} more player${minPlayers - playerCount === 1 ? '' : 's'}`
+    : playerCount > maxPlayers
+      ? `Too many players for ${GAME_TYPE_LABELS[currentRoom.gameType]} (max ${maxPlayers})`
+      : 'Ready to start';
+
   return (
-    <div className="room-screen">
-      <header className="room-header">
-        <div className="room-header-info">
-          <h1 className="room-name">{currentRoom.name}</h1>
+    <div className="room-screen app-page">
+      <TopBar context={`${currentRoom.name} · ${GAME_TYPE_LABELS[currentRoom.gameType]}`} />
+
+      <main className="app-main room-layout">
+        <section className="room-players app-panel">
+          <div className="room-section-header">
+            <h1 className="room-name">{currentRoom.name}</h1>
+            <span className={`room-player-count ${isValidCount ? 'room-player-count-valid' : 'room-player-count-invalid'}`}>
+              {playerCount}/{maxPlayers} players
+            </span>
+          </div>
+          <ul className="room-player-list">
+            {currentRoom.players.map((player: PlayerInfo) => (
+              <li key={player.id} className="room-player-item">
+                <div className="room-player-info">
+                  <span
+                    className={`room-player-dot${player.isConnected ? ' room-player-dot-connected' : ''}`}
+                    title={player.isConnected ? 'Connected' : 'Disconnected'}
+                  />
+                  <span className="room-player-name">{player.username}</span>
+                  {player.id === playerId && <span className="room-player-you">You</span>}
+                  {player.isOwner && <span className="room-player-owner">Host</span>}
+                </div>
+                {isOwner && player.id !== playerId && (
+                  <button
+                    className="room-kick-btn"
+                    onClick={() => handleKick(player)}
+                    title={`Remove ${player.username} from the room`}
+                  >
+                    Remove
+                  </button>
+                )}
+              </li>
+            ))}
+            {Array.from({ length: openSeats }, (_, i) => (
+              <li key={`seat-${i}`} className="room-player-item room-seat-open">
+                Open seat
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <aside className="room-sidebar app-panel">
+          <p className="app-panel-title">Game</p>
           {isOwner && currentRoom.status === 'lobby' ? (
             <select
               className="room-game-selector"
@@ -72,57 +120,32 @@ export function RoomScreen() {
           ) : (
             <span className="room-game-type">{GAME_TYPE_LABELS[currentRoom.gameType]}</span>
           )}
-        </div>
-        <span className={`room-player-count ${isValidCount ? 'room-player-count-valid' : 'room-player-count-invalid'}`}>
-          {playerCount}/{minPlayers}-{maxPlayers} players
-        </span>
-      </header>
+          <p className="room-game-range">{minPlayers}–{maxPlayers} players</p>
+          <p className={`room-count-hint ${isValidCount ? 'room-player-count-valid' : 'room-player-count-invalid'}`}>
+            {countHint}
+          </p>
 
-      <div className="room-content">
-        <ul className="room-player-list">
-          {currentRoom.players.map((player: PlayerInfo) => (
-            <li key={player.id} className="room-player-item">
-              <div className="room-player-info">
-                <span
-                  className={`room-player-dot${player.isConnected ? ' room-player-dot-connected' : ''}`}
-                  title={player.isConnected ? 'Connected' : 'Disconnected'}
-                />
-                <span className="room-player-name">{player.username}</span>
-                {player.isOwner && <span className="room-player-owner">Host</span>}
-              </div>
-              {isOwner && player.id !== playerId && (
-                <button
-                  className="room-kick-btn"
-                  onClick={() => handleKick(player)}
-                  title={`Remove ${player.username} from the room`}
-                >
-                  Remove
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-
-        <div className="room-actions">
-          {isOwner ? (
-            <button
-              className="room-start-btn"
-              disabled={!isValidCount}
-              title={isValidCount ? 'Start the game' : `Need ${minPlayers}-${maxPlayers} players`}
-              onClick={handleStartGame}
-            >
-              Start Game
+          <div className="room-actions">
+            {isOwner ? (
+              <button
+                className="room-start-btn"
+                disabled={!isValidCount}
+                title={isValidCount ? 'Start the game' : `Need ${minPlayers}-${maxPlayers} players`}
+                onClick={handleStartGame}
+              >
+                Start Game
+              </button>
+            ) : (
+              <p className="room-waiting">
+                Waiting for {ownerPlayer?.username ?? 'host'} to start...
+              </p>
+            )}
+            <button className="room-leave-btn" onClick={handleLeaveRoom} disabled={isLeaving}>
+              Leave Room
             </button>
-          ) : (
-            <p className="room-waiting">
-              Waiting for {ownerPlayer?.username ?? 'host'} to start...
-            </p>
-          )}
-          <button className="room-leave-btn" onClick={handleLeaveRoom} disabled={isLeaving}>
-            Leave Room
-          </button>
-        </div>
-      </div>
+          </div>
+        </aside>
+      </main>
     </div>
   );
 }

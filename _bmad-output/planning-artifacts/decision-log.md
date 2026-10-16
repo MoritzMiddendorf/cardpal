@@ -28,6 +28,18 @@ the top of the log when a decision changes; keep "Current status" up to date.
 
 ## Decisions
 
+### D11 — Desktop layout: full-width shell instead of a shrink-wrapped column · 2026-10-08
+
+- **Decision:** Every screen fills the viewport. Lobby, room and both game screens share a full-width top bar
+  (`TopBar`: brand, room · game, player avatar) and a centered content column of up to 1120px (`.app-main` in
+  `index.css`). The lobby shows rooms as a card grid, the room screen has a players panel (with open seats) and a
+  game/actions sidebar, Blackjack is laid out as a table (dealer top, opponents side by side, you at the bottom),
+  playing cards show rank and suit in the top-left corner so they stay readable when a hand overlaps.
+- **Why:** The owner found the lobby "crazily slim" on a 16:9 desktop: `#root` was a centered flex box, so every
+  screen shrink-wrapped to its content (~260px) with a two-tone background. Done directly on the owner's request
+  as polish (D9), without a story.
+- **Unchanged:** desktop only, `body { min-width: 1024px }` (NFR9). Checked at 1920×1080 and 1280×720.
+
 ### D10 — Continuous deployment from `main` · 2026-10-08
 
 - **Decision:** Northflank's own GitHub integration builds and deploys every commit on `main` (service CI + CD

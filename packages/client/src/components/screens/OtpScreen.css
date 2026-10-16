@@ -2,7 +2,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: 2rem;
+  min-height: 100vh;
+  padding: 2rem;
+  background: radial-gradient(ellipse at top, #16213e 0%, #0a0e1a 60%);
 }
 
 .otp-title {

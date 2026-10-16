@@ -7,13 +7,42 @@
 body {
   font-family: system-ui, -apple-system, sans-serif;
   min-width: 1024px;
-  background: #1a1a2e;
+  background: #0a0e1a;
   color: #eaeaea;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* Shared page shell: a full-width top bar and a centered content column.
+   The column is wide enough to use a 16:9 desktop without stretching lines edge to edge. */
+.app-page {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem;
+}
+
+.app-panel {
+  padding: 1.25rem 1.5rem;
+  background: #111a33;
+  border: 1px solid #0f3460;
+  border-radius: 12px;
+}
+
+.app-panel-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a93ad;
+  margin-bottom: 1rem;
 }

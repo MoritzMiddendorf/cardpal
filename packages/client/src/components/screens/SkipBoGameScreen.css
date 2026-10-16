@@ -1,11 +1,13 @@
 .skipbo-game {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
   background: #0a0e1a;
   color: #eaeaea;
-  padding: 1rem;
+}
+
+.skipbo-table {
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
+  padding-top: 1.5rem;
 }
 
 /* Turn banner */
@@ -71,6 +73,7 @@
 
 .skipbo-opponent-piles {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
   justify-content: center;
   align-items: flex-start;

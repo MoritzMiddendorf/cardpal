@@ -1,11 +1,38 @@
 .game-screen {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
   background: #0a0e1a;
   color: #eaeaea;
-  padding: 1.5rem;
+}
+
+/* Table layout: dealer on top, opponents side by side, your hand at the bottom */
+.game-table {
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
+}
+
+.game-dealer-area,
+.game-my-area {
+  align-self: center;
+  width: 100%;
+  max-width: 560px;
+}
+
+.game-opponents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 320px));
+  justify-content: center;
+  gap: 1rem;
+}
+
+.game-table .card-pile {
+  justify-content: center;
+}
+
+.game-results,
+.game-paused-banner {
+  align-self: center;
+  width: 100%;
+  max-width: 560px;
 }
 
 .game-dealer-area,
