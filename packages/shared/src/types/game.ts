@@ -66,6 +66,8 @@ export interface SkipBoPlayerState {
   stockPile: SkipBoPile;
   hand: SkipBoCard[];
   discardPiles: [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile];
+  /** Cumulative number of cards ever drawn into this hand. Lets clients animate exactly the new cards. */
+  drawnCount: number;
 }
 
 export interface SkipBoGameState extends GameState {
@@ -84,6 +86,8 @@ export interface FilteredSkipBoState {
   myHand: SkipBoCard[];
   myStockPile: PileInfo;
   myDiscardPiles: [PileInfo, PileInfo, PileInfo, PileInfo];
+  /** Cumulative cards drawn into my hand (see SkipBoPlayerState.drawnCount). */
+  myDrawnCount: number;
   buildingPiles: [PileInfo, PileInfo, PileInfo, PileInfo];
   otherPlayers: {
     playerId: string;
@@ -91,6 +95,7 @@ export interface FilteredSkipBoState {
     stockPile: PileInfo;
     discardPiles: [PileInfo, PileInfo, PileInfo, PileInfo];
     handCount: number;
+    drawnCount: number;
     isConnected: boolean;
   }[];
   drawPileCount: number;

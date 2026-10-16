@@ -219,6 +219,7 @@ describe('playerGameStateSchema', () => {
           { topCard: null, count: 0 },
           { topCard: null, count: 0 },
         ],
+        myDrawnCount: 5,
         otherPlayers: [],
         drawPileCount: 50,
       },
@@ -269,6 +270,7 @@ describe('skipBoGameStateSchema', () => {
         stockPile: [{ value: 5, isWild: false, faceUp: true }],
         hand: [{ value: 1, isWild: false, faceUp: true }],
         discardPiles: [[], [], [], []],
+        drawnCount: 5,
       },
     ],
   };
@@ -317,14 +319,21 @@ describe('filteredSkipBoStateSchema', () => {
           { topCard: null, count: 0 },
         ],
         handCount: 5,
+        drawnCount: 9,
         isConnected: true,
       },
     ],
+    myDrawnCount: 7,
     drawPileCount: 50,
   };
 
   it('parses valid filtered Skip-Bo state', () => {
     expect(() => filteredSkipBoStateSchema.parse(validFiltered)).not.toThrow();
+  });
+
+  it('requires the draw counters', () => {
+    const { myDrawnCount, ...rest } = validFiltered;
+    expect(() => filteredSkipBoStateSchema.parse(rest)).toThrow();
   });
 
   it('rejects negative drawPileCount', () => {

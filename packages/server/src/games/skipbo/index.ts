@@ -28,6 +28,7 @@ function drawToFive(state: SkipBoGameState, playerIndex: number): void {
   while (ps.hand.length < 5 && state.drawPile.length > 0) {
     const card = state.drawPile.pop()!;
     ps.hand.push({ ...card, faceUp: true });
+    ps.drawnCount++;
   }
 }
 
@@ -104,6 +105,7 @@ export const skipBoEngine: GameEngine<SkipBoGameState> = {
         stockPile: stockCards,
         hand: handCards,
         discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile],
+        drawnCount: handCards.length,
       };
     });
 

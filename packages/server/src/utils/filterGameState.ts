@@ -59,6 +59,7 @@ export function filterGameState(instance: GameInstance, playerId: string, connec
       myDiscardPiles: myState
         ? myState.discardPiles.map(pileInfo) as [PileInfo, PileInfo, PileInfo, PileInfo]
         : [{ topCard: null, count: 0 }, { topCard: null, count: 0 }, { topCard: null, count: 0 }, { topCard: null, count: 0 }],
+      myDrawnCount: myState?.drawnCount ?? 0,
       buildingPiles: sbState.buildingPiles.map(pileInfo) as [PileInfo, PileInfo, PileInfo, PileInfo],
       otherPlayers: sbState.playerStates
         .filter((ps) => ps.playerId !== playerId)
@@ -68,6 +69,7 @@ export function filterGameState(instance: GameInstance, playerId: string, connec
           stockPile: pileInfo(ps.stockPile),
           discardPiles: ps.discardPiles.map(pileInfo) as [PileInfo, PileInfo, PileInfo, PileInfo],
           handCount: ps.hand.length,
+          drawnCount: ps.drawnCount,
           isConnected: connectionMap?.get(ps.playerId) ?? true,
         })),
       drawPileCount: sbState.drawPile.length,

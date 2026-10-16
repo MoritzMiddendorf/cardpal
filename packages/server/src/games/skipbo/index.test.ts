@@ -39,12 +39,14 @@ function createTestState(overrides?: Partial<SkipBoGameState>): SkipBoGameState 
         stockPile: [numbered(3, false), numbered(1, true)],
         hand: [numbered(1), numbered(2), numbered(3), numbered(5), numbered(7)],
         discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile],
+        drawnCount: 5,
       },
       {
         playerId: 'player-2',
         stockPile: [numbered(4, false), numbered(2, true)],
         hand: [numbered(2), numbered(4), numbered(6), numbered(8), numbered(10)],
         discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile],
+        drawnCount: 5,
       },
     ],
     ...overrides,
@@ -112,6 +114,13 @@ describe('skipBoEngine.getInitialState', () => {
       for (let i = 0; i < topIdx; i++) {
         expect(ps.stockPile[i]!.faceUp).toBe(false);
       }
+    }
+  });
+
+  it('counts the 5 dealt hand cards as drawn', () => {
+    const state = skipBoEngine.getInitialState(twoPlayers);
+    for (const ps of state.playerStates) {
+      expect(ps.drawnCount).toBe(5);
     }
   });
 
@@ -346,6 +355,8 @@ describe('applyAction — PLAY_FROM_HAND', () => {
     });
     // Hand should be refilled to 5
     expect(result.playerStates[0]!.hand).toHaveLength(5);
+    // All 5 refilled cards count as drawn, even though the hand length only grew by 4
+    expect(result.playerStates[0]!.drawnCount).toBe(state.playerStates[0]!.drawnCount + 5);
     // Turn should NOT end
     expect(result.currentPlayerIndex).toBe(0);
   });
@@ -441,6 +452,8 @@ describe('applyAction — DISCARD', () => {
     });
     // Player 2 should have been drawn up to 5
     expect(result.playerStates[1]!.hand).toHaveLength(5);
+    expect(result.playerStates[1]!.drawnCount).toBe(state.playerStates[1]!.drawnCount + 2);
+    expect(result.playerStates[0]!.drawnCount).toBe(state.playerStates[0]!.drawnCount);
   });
 
   it('does not draw for next player if they already have 5 cards', () => {
@@ -808,9 +821,9 @@ describe('skipBoEngine.getResults', () => {
       drawPile: [],
       buildingPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile],
       playerStates: [
-        { playerId: 'p1', stockPile: [], hand: [], discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile] },
-        { playerId: 'p2', stockPile: [numbered(3), numbered(5)], hand: [], discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile] },
-        { playerId: 'p3', stockPile: [numbered(1)], hand: [], discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile] },
+        { playerId: 'p1', stockPile: [], hand: [], discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile], drawnCount: 0 },
+        { playerId: 'p2', stockPile: [numbered(3), numbered(5)], hand: [], discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile], drawnCount: 0 },
+        { playerId: 'p3', stockPile: [numbered(1)], hand: [], discardPiles: [[], [], [], []] as [SkipBoPile, SkipBoPile, SkipBoPile, SkipBoPile], drawnCount: 0 },
       ],
     };
     const usernames = new Map([['p1', 'Alice'], ['p2', 'Bob'], ['p3', 'Charlie']]);
@@ -937,8 +950,8 @@ describe('skipBoEngine robustness', () => {
       playerStates: [
         { ...createTestState().playerStates[0]!, hand: [numbered(9)] },
         // player-2: empty hand, nothing playable from stock -> must be skipped
-        { playerId: 'player-2', stockPile: [numbered(12)], hand: [], discardPiles: [[], [], [], []] },
-        { playerId: 'player-3', stockPile: [numbered(12)], hand: [numbered(11)], discardPiles: [[], [], [], []] },
+        { playerId: 'player-2', stockPile: [numbered(12)], hand: [], discardPiles: [[], [], [], []], drawnCount: 0 },
+        { playerId: 'player-3', stockPile: [numbered(12)], hand: [numbered(11)], discardPiles: [[], [], [], []], drawnCount: 0 },
       ],
     });
     const next = skipBoEngine.applyAction(state, {
@@ -954,8 +967,8 @@ describe('skipBoEngine robustness', () => {
     const state = createTestState({
       drawPile: [],
       playerStates: [
-        { playerId: 'player-1', stockPile: [numbered(12), numbered(12)], hand: [numbered(9)], discardPiles: [[], [], [], []] },
-        { playerId: 'player-2', stockPile: [numbered(12)], hand: [], discardPiles: [[], [], [], []] },
+        { playerId: 'player-1', stockPile: [numbered(12), numbered(12)], hand: [numbered(9)], discardPiles: [[], [], [], []], drawnCount: 0 },
+        { playerId: 'player-2', stockPile: [numbered(12)], hand: [], discardPiles: [[], [], [], []], drawnCount: 0 },
       ],
     });
     const next = skipBoEngine.applyAction(state, {

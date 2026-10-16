@@ -1,18 +1,26 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useAppStore } from '../../store/index.js';
 import { socket } from '../../socket/client.js';
 import { RemoveDisconnectedPlayers } from '../ui/RemoveDisconnectedPlayers.js';
 import { SkipBoCard } from '../ui/SkipBoCard.js';
 import { SkipBoPile } from '../ui/SkipBoPile.js';
 import { TopBar } from '../ui/TopBar.js';
+import { Deck } from '../ui/Deck.js';
+import { FlyIn, FLY_IN_STAGGER_MS } from '../ui/FlyIn.js';
+import { useCardDrag } from '../../hooks/useCardDrag.js';
 import {
   getNextNeededValue,
   getActionsForSource as getActionsForSourceHelper,
   isBuildingPileTarget as isBuildingPileTargetHelper,
   isDiscardPileTarget as isDiscardPileTargetHelper,
+  findDropAction,
+  dropTargetId,
+  parseDropTargetId,
+  isSameSource,
+  newlyDrawnIndices,
 } from './skipBoHelpers.js';
-import type { SourceSelection } from './skipBoHelpers.js';
-import type { FilteredGameState, PlayerResult } from '@cardpal/shared';
+import type { SourceSelection, DropTarget } from './skipBoHelpers.js';
+import type { FilteredGameState, GameAction, PlayerResult, SkipBoCard as SkipBoCardType } from '@cardpal/shared';
 import './SkipBoGameScreen.css';
 
 function resultLabel(result: PlayerResult['result']): string {
@@ -25,10 +33,14 @@ function resultLabel(result: PlayerResult['result']): string {
 
 export function SkipBoGameScreen() {
   const gameState = useAppStore((s) => s.gameState) as FilteredGameState;
+  const previousGameState = useAppStore((s) => s.previousGameState);
   const currentRoom = useAppStore((s) => s.currentRoom);
   const playerId = useAppStore((s) => s.playerId);
 
   const [selectedSource, setSelectedSource] = useState<SourceSelection | null>(null);
+  /** Source of a card that was just dropped; hidden until the server's next state arrives. */
+  const [droppedSource, setDroppedSource] = useState<SourceSelection | null>(null);
+  const deckRef = useRef<HTMLDivElement>(null);
 
   const {
     myPlayerId,
@@ -48,15 +60,52 @@ export function SkipBoGameScreen() {
   const myResult = results?.find((r: PlayerResult) => r.playerId === myPlayerId);
   const otherPlayers = players.filter((p) => p.id !== myPlayerId);
 
-  // H1 fix: Clear stale selection when game state changes
-  useEffect(() => {
-    setSelectedSource(null);
-  }, [validActions]);
-
   const getActionsForSource = useCallback(
     (source: SourceSelection) => getActionsForSourceHelper(validActions, source),
     [validActions],
   );
+
+  function sendAction(action: GameAction) {
+    socket.emit('gameAction', { type: action.type, playerId: myPlayerId, payload: action.payload });
+  }
+
+  const { drag, startDrag, cancel: cancelDrag, getActiveSource } = useCardDrag<SourceSelection, DropTarget>({
+    canDrag: (source) => isMyTurn && getActionsForSourceHelper(validActions, source).length > 0,
+    targetAt: (element) =>
+      parseDropTargetId(element?.closest('[data-drop-target]')?.getAttribute('data-drop-target')),
+    // Selecting the dragged card reuses the click-to-move target highlighting.
+    onStart: (source) => setSelectedSource(source),
+    onDrop: (source, target) => {
+      const action = findDropAction(validActions, source, target);
+      if (!action) return false;
+      sendAction(action);
+      setSelectedSource(null);
+      setDroppedSource(source);
+      return true;
+    },
+    onCancel: () => setSelectedSource(null),
+  });
+
+  // H1 fix: Clear stale selection when game state changes. A drag in progress survives an update
+  // that still allows its move (e.g. someone's connection status changed) and is cancelled otherwise.
+  useEffect(() => {
+    setDroppedSource(null);
+    const dragging = getActiveSource();
+    if (dragging && isMyTurn && getActionsForSourceHelper(validActions, dragging).length > 0) {
+      setSelectedSource(dragging);
+      return;
+    }
+    if (dragging) cancelDrag();
+    setSelectedSource(null);
+    // Runs once per new game state, like before.
+  }, [validActions]);
+
+  // If the server rejects a drop, no new state arrives: show the card again after a moment.
+  useEffect(() => {
+    if (!droppedSource) return;
+    const timer = setTimeout(() => setDroppedSource(null), 1500);
+    return () => clearTimeout(timer);
+  }, [droppedSource]);
 
   const isBuildingPileTarget = useCallback(
     (buildingPileIndex: number) => isBuildingPileTargetHelper(validActions, selectedSource, buildingPileIndex),
@@ -94,15 +143,9 @@ export function SkipBoGameScreen() {
   function handleBuildingPileClick(buildingPileIndex: number) {
     if (!selectedSource || !isMyTurn) return;
 
-    const actions = getActionsForSource(selectedSource);
-    const action = actions.find(
-      (a) =>
-        (a.type === 'PLAY_FROM_HAND' || a.type === 'PLAY_FROM_STOCK' || a.type === 'PLAY_FROM_DISCARD') &&
-        (a.payload as Record<string, number>)?.buildingPileIndex === buildingPileIndex
-    );
-
+    const action = findDropAction(validActions, selectedSource, { type: 'building', index: buildingPileIndex });
     if (action) {
-      socket.emit('gameAction', { type: action.type, playerId: myPlayerId, payload: action.payload });
+      sendAction(action);
       setSelectedSource(null);
     }
   }
@@ -119,15 +162,9 @@ export function SkipBoGameScreen() {
       return;
     }
 
-    const actions = getActionsForSource(selectedSource);
-    const action = actions.find(
-      (a) =>
-        a.type === 'DISCARD' &&
-        (a.payload as Record<string, number>)?.discardPileIndex === discardPileIndex
-    );
-
+    const action = findDropAction(validActions, selectedSource, { type: 'discard', index: discardPileIndex });
     if (action) {
-      socket.emit('gameAction', { type: action.type, playerId: myPlayerId, payload: action.payload });
+      sendAction(action);
       setSelectedSource(null);
     }
   }
@@ -153,7 +190,44 @@ export function SkipBoGameScreen() {
     buildingPiles,
     otherPlayers: otherSkipBoPlayers,
     drawPileCount,
+    myDrawnCount,
   } = skipBoState;
+  const prevSkipBoState = previousGameState?.skipBoState;
+
+  // Cards drawn since the previous state fly in from the deck.
+  const myNewCards = newlyDrawnIndices(myHand.length, prevSkipBoState?.myDrawnCount ?? null, myDrawnCount);
+  function opponentNewCards(playerId: string, handCount: number, drawnCount: number): number[] {
+    const prev = prevSkipBoState?.otherPlayers.find((p) => p.playerId === playerId);
+    return newlyDrawnIndices(handCount, prev?.drawnCount ?? null, drawnCount);
+  }
+  function flyDelay(newIndices: number[], index: number): number {
+    return Math.max(newIndices.indexOf(index), 0) * FLY_IN_STAGGER_MS;
+  }
+
+  const dragSource = drag && !drag.returning ? drag.source : null;
+  /** Card state while it is moved: being dragged (dimmed) or dropped and awaiting the server (hidden). */
+  function liftedClass(source: SourceSelection): string {
+    if (isSameSource(droppedSource, source)) return 'skipbo-card-dropped';
+    if (isSameSource(dragSource, source)) return 'skipbo-card-dragging';
+    return '';
+  }
+  function isDragOver(target: DropTarget): boolean {
+    return !!drag?.over && drag.over.type === target.type && drag.over.index === target.index &&
+      !!dragSource && !!findDropAction(validActions, dragSource, target);
+  }
+  function canDragSource(source: SourceSelection): boolean {
+    return isMyTurn && sourceHasActions(source);
+  }
+
+  let ghostCard: SkipBoCardType | null = null;
+  if (drag) {
+    const src = drag.source;
+    ghostCard = src.type === 'hand'
+      ? myHand[src.handIndex] ?? null
+      : src.type === 'stock'
+        ? myStockPile.topCard
+        : myDiscardPiles[src.discardPileIndex]?.topCard ?? null;
+  }
 
   // Find which player's turn it is
   const activePlayer = players[gameState.currentPlayerIndex];
@@ -228,9 +302,20 @@ export function SkipBoGameScreen() {
                 <div className="skipbo-opponent-piles">
                   <SkipBoPile pile={skipBoPlayer.stockPile} label="Stock" />
                   <div className="skipbo-opponent-hand-backs">
-                    {Array.from({ length: skipBoPlayer.handCount }, (_, i) => (
-                      <SkipBoCard key={i} card={{ value: 0, isWild: false, faceUp: false }} />
-                    ))}
+                    {(() => {
+                      const newCards = opponentNewCards(player.id, skipBoPlayer.handCount, skipBoPlayer.drawnCount);
+                      return Array.from({ length: skipBoPlayer.handCount }, (_, i) => (
+                        <FlyIn
+                          key={i}
+                          from={deckRef}
+                          active={newCards.includes(i)}
+                          delay={flyDelay(newCards, i)}
+                          animationKey={skipBoPlayer.drawnCount}
+                        >
+                          <SkipBoCard card={{ value: 0, isWild: false, faceUp: false }} />
+                        </FlyIn>
+                      ));
+                    })()}
                   </div>
                   {skipBoPlayer.discardPiles.map((dp, di) => (
                     <SkipBoPile key={di} pile={dp} label={`D${di + 1}`} />
@@ -252,12 +337,16 @@ export function SkipBoGameScreen() {
                   pile={pile}
                   needsValue={needed <= 12 ? needed : null}
                   highlighted={isBuildingPileTarget(i)}
+                  dropTarget={dropTargetId({ type: 'building', index: i })}
+                  dropHover={isDragOver({ type: 'building', index: i })}
                   onClick={() => handleBuildingPileClick(i)}
                 />
               );
             })}
+            <div className="skipbo-draw-deck">
+              <Deck ref={deckRef} count={drawPileCount} cardClassName="skipbo-card skipbo-card-back" label="Draw pile" />
+            </div>
           </div>
-          <div className="skipbo-draw-info">Draw pile: {drawPileCount}</div>
         </div>
 
         {/* My Area */}
@@ -277,24 +366,43 @@ export function SkipBoGameScreen() {
               <SkipBoPile
                 pile={myStockPile}
                 label="Stock"
-                highlighted={isMyTurn && sourceHasActions({ type: 'stock' })}
+                highlighted={canDragSource({ type: 'stock' })}
+                draggable={canDragSource({ type: 'stock' })}
+                lifted={liftedClass({ type: 'stock' })}
+                onPointerDown={startDrag({ type: 'stock' })}
               />
-              {selectedSource?.type === 'stock' && (
+              {!dragSource && selectedSource?.type === 'stock' && (
                 <div className="skipbo-selection-indicator" />
               )}
             </div>
 
             {/* Hand Cards */}
             <div className="skipbo-my-hand">
-              {myHand.map((card, i) => (
-                <SkipBoCard
-                  key={i}
-                  card={card}
-                  highlighted={isMyTurn && sourceHasActions({ type: 'hand', handIndex: i })}
-                  selected={selectedSource?.type === 'hand' && selectedSource.handIndex === i}
-                  onClick={() => handleSourceClick({ type: 'hand', handIndex: i })}
-                />
-              ))}
+              {myHand.map((card, i) => {
+                const source: SourceSelection = { type: 'hand', handIndex: i };
+                const playable = canDragSource(source);
+                return (
+                  <FlyIn
+                    key={i}
+                    from={deckRef}
+                    active={myNewCards.includes(i)}
+                    delay={flyDelay(myNewCards, i)}
+                    animationKey={myDrawnCount}
+                  >
+                    <SkipBoCard
+                      card={card}
+                      highlighted={playable}
+                      selected={!dragSource && isSameSource(selectedSource, source)}
+                      className={[
+                        playable ? 'skipbo-card-draggable' : '',
+                        liftedClass(source),
+                      ].filter(Boolean).join(' ')}
+                      onClick={() => handleSourceClick(source)}
+                      onPointerDown={startDrag(source)}
+                    />
+                  </FlyIn>
+                );
+              })}
             </div>
 
             {/* Discard Piles */}
@@ -308,6 +416,11 @@ export function SkipBoGameScreen() {
                       isDiscardPileTarget(i) ||
                       (isMyTurn && !selectedSource && sourceHasActions({ type: 'discard', discardPileIndex: i }))
                     }
+                    dropTarget={dropTargetId({ type: 'discard', index: i })}
+                    dropHover={isDragOver({ type: 'discard', index: i })}
+                    draggable={canDragSource({ type: 'discard', discardPileIndex: i })}
+                    lifted={liftedClass({ type: 'discard', discardPileIndex: i })}
+                    onPointerDown={startDrag({ type: 'discard', discardPileIndex: i })}
                     onClick={() => {
                       if (isDiscardPileTarget(i)) {
                         handleDiscardPileClick(i);
@@ -316,7 +429,7 @@ export function SkipBoGameScreen() {
                       }
                     }}
                   />
-                  {selectedSource?.type === 'discard' && selectedSource.discardPileIndex === i && (
+                  {!dragSource && selectedSource?.type === 'discard' && selectedSource.discardPileIndex === i && (
                     <div className="skipbo-selection-indicator" />
                   )}
                 </div>
@@ -325,6 +438,16 @@ export function SkipBoGameScreen() {
           </div>
         </div>
       </main>
+
+      {/* The card being dragged follows the pointer above everything else. */}
+      {drag && ghostCard && (
+        <div
+          className={`skipbo-drag-ghost${drag.returning ? ' skipbo-drag-ghost-returning' : ''}`}
+          style={{ transform: `translate(${drag.x}px, ${drag.y}px)` }}
+        >
+          <SkipBoCard card={ghostCard} />
+        </div>
+      )}
     </div>
   );
 }

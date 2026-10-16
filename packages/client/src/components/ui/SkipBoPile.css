@@ -39,3 +39,10 @@
   color: #aaa;
   white-space: nowrap;
 }
+
+/* A dragged card is over this pile and can be dropped here. */
+.skipbo-pile-drop-hover .skipbo-card {
+  transform: scale(1.08);
+  border-color: #f1c40f;
+  box-shadow: 0 0 14px rgba(241, 196, 15, 0.8), 0 0 28px rgba(241, 196, 15, 0.35);
+}

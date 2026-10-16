@@ -1,22 +1,6 @@
 .animated-card {}
 
-/* New card deal animation - slides down and fades in */
-.card-entering {
-  animation: card-deal 400ms ease-out forwards;
-}
-
-@keyframes card-deal {
-  from {
-    transform: translateY(-50px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Card flip reveal animation for dealer */
+/* New cards fly in from the deck (see FlyIn). The dealer's hole card flips when revealed. */
 .card-reveal {
   animation: card-flip 500ms ease-in-out forwards;
 }
@@ -35,7 +19,6 @@
 
 /* Respect user preference for reduced motion */
 @media (prefers-reduced-motion: reduce) {
-  .card-entering,
   .card-reveal {
     animation: none;
   }

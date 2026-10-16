@@ -326,10 +326,22 @@
   display: flex;
 }
 
-.card-pile .animated-card + .animated-card {
+.card-pile > .fly-in + .fly-in {
   margin-left: -40px;
 }
 
 .card-pile .card + .card {
   margin-left: -40px;
+}
+
+/* The deck sits at the dealer's right; dealt cards fly out of it. */
+.game-dealer-area {
+  position: relative;
+}
+
+.game-deck {
+  position: absolute;
+  top: 50%;
+  right: 1.25rem;
+  transform: translateY(-50%);
 }

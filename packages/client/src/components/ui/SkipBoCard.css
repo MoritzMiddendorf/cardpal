@@ -110,3 +110,48 @@
     transform: none;
   }
 }
+
+/* Drag & drop. touch-action: none keeps a touch drag from scrolling the page. */
+.skipbo-card-draggable {
+  touch-action: none;
+  cursor: grab;
+}
+
+.skipbo-card-dragging,
+.skipbo-card-dragging:hover {
+  opacity: 0.3;
+  transform: none;
+}
+
+/* Dropped and waiting for the server: the card is already "on" its pile. */
+.skipbo-card-dropped {
+  visibility: hidden;
+}
+
+.skipbo-drag-ghost {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 1000;
+  pointer-events: none;
+  cursor: grabbing;
+}
+
+.skipbo-drag-ghost .skipbo-card {
+  transform: rotate(-4deg) scale(1.06);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.45);
+}
+
+.skipbo-drag-ghost-returning {
+  transition: transform 200ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skipbo-drag-ghost-returning {
+    transition: none;
+  }
+
+  .skipbo-drag-ghost .skipbo-card {
+    transform: none;
+  }
+}

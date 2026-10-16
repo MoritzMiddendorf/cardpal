@@ -418,12 +418,14 @@ function makeSkipBoInstance(overrides: Partial<SkipBoGameState> = {}): GameInsta
         stockPile: [sbCard(3, false, false), sbCard(8, false, true)],
         hand: [sbCard(4), sbCard(5), sbCard(1, true), sbCard(9), sbCard(12)],
         discardPiles: [[sbCard(7)], [], [sbCard(3)], []],
+        drawnCount: 5,
       },
       {
         playerId: 'player-2',
         stockPile: [sbCard(6, false, false), sbCard(10, false, true)],
         hand: [sbCard(2), sbCard(11), sbCard(4)],
         discardPiles: [[], [sbCard(5)], [], []],
+        drawnCount: 7,
       },
     ],
     ...overrides,
@@ -471,6 +473,8 @@ describe('filterGameState — Skip-Bo state', () => {
     const other = result.skipBoState!.otherPlayers.find((p) => p.playerId === 'player-1');
     expect(other).toBeDefined();
     expect(other!.handCount).toBe(5);
+    expect(other!.drawnCount).toBe(5);
+    expect(result.skipBoState!.myDrawnCount).toBe(7);
     // No hand cards exposed
     expect((other as any).hand).toBeUndefined();
   });
