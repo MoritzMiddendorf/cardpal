@@ -4,7 +4,7 @@ Read this before planning or implementing anything. It records decisions made **
 architecture and epics were written, and where they differ, **this file wins**. Add new entries at
 the top of the log when a decision changes; keep "Current status" up to date.
 
-## Current status (2026-10-08)
+## Current status (2026-10-16)
 
 - All 22 stories in `sprint-status.yaml` (epics 1–5: auth, lobby, Blackjack, connection resilience,
   Skip-Bo) are implemented. The project sat dormant for months, was revived on 2026-10-07 and merged
@@ -17,16 +17,28 @@ the top of the log when a decision changes; keep "Current status" up to date.
   smoke test against the running production container. Keep it green.
 - 2026-10-08 readiness review: ready for the first try-out; nothing blocks it in the code. See D10 for deploys.
 - Dependabot opens weekly npm PRs and monthly actions/Docker PRs.
+- 2026-10-16: Epic 6 started on the owner's request: story 6.1 adds card drag & drop and the deck fly-in (D12).
 
 ### Open items, in rough priority
 
 1. Owner action: set the GitHub repo variable `CARDPAL_URL` to the public URL so the deploy check runs (D10).
 2. First try-out, then fix whatever real usage reveals ("UI polish based on real usage" in the PRD).
-3. Skip-Bo has no card-movement animations (FR37/FR38 are only met for Blackjack). Accepted for the
-   first try-out; a candidate story afterwards.
+3. Skip-Bo plays still have no movement animation for *other* players (FR38): an opponent's played card just appears on
+   the building pile. Your own moves are dragged (D12) and every draw flies in from the deck. Candidate follow-up story.
 4. Post-MVP per PRD: Lovecraft Letter (third game).
 
 ## Decisions
+
+### D12 — Drag & drop and deck fly-in (story 6.1) · 2026-10-16
+
+- **Decision:** Skip-Bo cards are moved by dragging them onto their pile; click-then-click stays as the fallback. Drawn cards
+  in both games fly in from a visible deck (Skip-Bo draw pile, Blackjack shoe), for every player.
+- **How:** Pointer Events (not HTML5 drag & drop, which doesn't work for touch) in `useCardDrag`; a press only becomes a drag
+  after 6px, so clicks are unaffected. Fly-in uses the Web Animations API from the deck's position (`FlyIn`). No new
+  dependency. Both respect `prefers-reduced-motion`.
+- **Server change:** each Skip-Bo player has a cumulative `drawnCount`; the client diffs it to know exactly which hand cards
+  are new (a hand length diff is wrong when the last card is played and 5 are drawn in one update).
+- **Touch:** drag works on touch screens too, but the app is still desktop-first (NFR9, D11).
 
 ### D11 — Desktop layout: full-width shell instead of a shrink-wrapped column · 2026-10-08
 

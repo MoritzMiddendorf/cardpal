@@ -90,7 +90,7 @@
   font-size: 0.5rem;
 }
 
-.skipbo-opponent-hand-backs .skipbo-card + .skipbo-card {
+.skipbo-opponent-hand-backs > * + * {
   margin-left: -16px;
 }
 
@@ -125,9 +125,10 @@
   justify-content: center;
 }
 
-.skipbo-draw-info {
-  font-size: 0.75rem;
-  color: #aaa;
+.skipbo-draw-deck {
+  margin-left: 1.5rem;
+  padding-left: 1.5rem;
+  border-left: 1px dashed rgba(255, 255, 255, 0.15);
 }
 
 /* My area */

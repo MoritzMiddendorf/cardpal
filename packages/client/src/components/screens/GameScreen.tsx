@@ -1,8 +1,10 @@
+import { useRef } from 'react';
 import { useAppStore } from '../../store/index.js';
 import { socket } from '../../socket/client.js';
 import { RemoveDisconnectedPlayers } from '../ui/RemoveDisconnectedPlayers.js';
 import { TopBar } from '../ui/TopBar.js';
 import { AnimatedCard } from '../ui/AnimatedCard.js';
+import { Deck } from '../ui/Deck.js';
 import { detectNewCards } from '../../utils/cardDiff.js';
 import { SkipBoGameScreen } from './SkipBoGameScreen.js';
 import { GameType } from '@cardpal/shared';
@@ -16,6 +18,7 @@ export function GameScreen() {
   const previousGameState = useAppStore((s) => s.previousGameState);
   const currentRoom = useAppStore((s) => s.currentRoom);
   const playerId = useAppStore((s) => s.playerId);
+  const deckRef = useRef<HTMLDivElement>(null);
 
   if (!gameState) return null;
 
@@ -135,6 +138,9 @@ export function GameScreen() {
 
         {/* Dealer Area */}
         <div className="game-dealer-area">
+          <div className="game-deck">
+            <Deck ref={deckRef} cardClassName="card card-back" />
+          </div>
           <div className="game-area-label">
             Dealer
             {dealerHandValue !== null && (
@@ -145,6 +151,7 @@ export function GameScreen() {
             {dealerCards.map((c: CardType, i: number) => (
               <AnimatedCard
                 key={i}
+                deckRef={deckRef}
                 card={c}
                 isNew={newCards.dealerCards.includes(i)}
                 animationDelay={staggerDelay(newCards.dealerCards, i)}
@@ -180,6 +187,7 @@ export function GameScreen() {
                     {(getOtherPlayerHand(player.id)?.cards ?? []).map((c: CardType, i: number) => (
                       <AnimatedCard
                         key={i}
+                        deckRef={deckRef}
                         card={c}
                         isNew={playerNewCards.includes(i)}
                         animationDelay={staggerDelay(playerNewCards, i)}
@@ -205,6 +213,7 @@ export function GameScreen() {
             {hand.map((c: CardType, i: number) => (
               <AnimatedCard
                 key={i}
+                deckRef={deckRef}
                 card={c}
                 isNew={newCards.myHand.includes(i)}
                 animationDelay={staggerDelay(newCards.myHand, i)}

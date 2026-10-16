@@ -1,0 +1,47 @@
+.deck {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.deck-stack {
+  position: relative;
+  display: grid;
+}
+
+/* Layers share one grid cell so they stack; offsets give the pile some depth. */
+.deck-layer,
+.deck-empty {
+  grid-area: 1 / 1;
+}
+
+.deck-empty {
+  background: transparent;
+  border-style: dashed;
+  opacity: 0.6;
+}
+
+.deck-count {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 10px;
+  background: #e94560;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.deck-label {
+  font-size: 0.6875rem;
+  color: #aaa;
+  white-space: nowrap;
+}

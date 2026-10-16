@@ -239,6 +239,13 @@ This epic proves the architecture by adding the second game type. Uses the game 
 
 **FRs covered:** FR32 (leverages game engine from Epic 3)
 
+### Epic 6: Tactile Card Handling (added 2026-10-16)
+**Goal:** Moving cards feels like handling real cards: drag them where they go, and watch drawn cards fly in from the deck.
+
+Added after the MVP on the owner's request (see decision log D12). Builds on Epic 4's animations and Epic 5's Skip-Bo UI.
+
+**FRs covered:** FR37 (extends), NFR2
+
 ---
 
 ## Epic 1: Foundation & Authentication
@@ -1019,3 +1026,32 @@ So that **we have a clear winner and can play again**.
 **When** a new Skip-Bo game starts
 **Then** a fresh game is initialized with the same players
 **And** stock piles are re-dealt
+
+---
+
+## Epic 6: Tactile Card Handling
+
+**Goal:** Moving cards feels like handling real cards: drag them where they go, and watch drawn cards fly in from the deck.
+
+### Story 6.1: Card Drag & Drop and Draw Fly-In
+
+As a **player**,
+I want **to drag my cards onto the pile where they go, and see drawn cards fly in from the deck**,
+So that **playing feels like handling real cards and I can follow where cards come from**.
+
+**Acceptance Criteria:**
+
+**Given** it is my Skip-Bo turn
+**When** I press on a playable card (hand card, stock top, discard pile top) and move the pointer
+**Then** the card follows the pointer, valid drop targets are highlighted, and dropping on a valid target plays the move
+**And** dropping anywhere else returns the card to where it came from without sending anything
+
+**Given** I prefer clicking or I am on a touch screen
+**When** I tap a card and then tap a target
+**Then** the existing click-to-move flow still works, and dragging works with touch too
+
+**Given** cards are drawn (Skip-Bo refill, Blackjack deal/hit)
+**When** the new state arrives
+**Then** each new card flies from a visible deck to its spot, staggered, for every player who can see it
+**And** with reduced motion enabled, cards appear without flying
+

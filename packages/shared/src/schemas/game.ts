@@ -68,6 +68,7 @@ export const skipBoPlayerStateSchema = z.object({
   stockPile: skipBoPileSchema,
   hand: z.array(skipBoCardSchema),
   discardPiles: z.tuple([skipBoPileSchema, skipBoPileSchema, skipBoPileSchema, skipBoPileSchema]),
+  drawnCount: z.number().int().min(0),
 });
 
 export const skipBoGameStateSchema = gameStateSchema.extend({
@@ -86,6 +87,7 @@ export const filteredSkipBoStateSchema = z.object({
   myHand: z.array(skipBoCardSchema),
   myStockPile: pileInfoSchema,
   myDiscardPiles: z.tuple([pileInfoSchema, pileInfoSchema, pileInfoSchema, pileInfoSchema]),
+  myDrawnCount: z.number().int().min(0),
   buildingPiles: z.tuple([pileInfoSchema, pileInfoSchema, pileInfoSchema, pileInfoSchema]),
   otherPlayers: z.array(z.object({
     playerId: z.string(),
@@ -93,6 +95,7 @@ export const filteredSkipBoStateSchema = z.object({
     stockPile: pileInfoSchema,
     discardPiles: z.tuple([pileInfoSchema, pileInfoSchema, pileInfoSchema, pileInfoSchema]),
     handCount: z.number().int().min(0),
+    drawnCount: z.number().int().min(0),
     isConnected: z.boolean(),
   })),
   drawPileCount: z.number().int().min(0),
