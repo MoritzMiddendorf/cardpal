@@ -1,17 +1,19 @@
 import express from 'express';
 import { createServer } from 'node:http';
 import { Server } from 'socket.io';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ClientToServerEvents, ServerToClientEvents } from '@cardpal/shared';
 import { GameType, otpValidationRequestSchema } from '@cardpal/shared';
-import { PORT, ADMIN_SECRET, DEPLOYED_VERSION, OTP_ATTEMPTS_PER_WINDOW, OTP_ATTEMPT_WINDOW_MS } from './config.js';
+import { PORT, ADMIN_SECRET, DEPLOYED_VERSION, OTP_ATTEMPTS_PER_WINDOW, OTP_ATTEMPT_WINDOW_MS, OTP_ENTRY_PATH, isPublicAccess } from './config.js';
 import { generateOtpCode } from './utils/generateOtp.js';
 import { isAdminRequest } from './utils/adminAuth.js';
 import { createRateLimiter } from './utils/rateLimiter.js';
 import { setOtp, isOtpValid, getOtp, clearOtp } from './state/otp.js';
-import { createPendingSession, getSessionByToken, clearSessions, clearPendingSessions } from './state/sessions.js';
+import { getSessionByToken, clearSessions, clearPendingSessions, removePendingSession } from './state/sessions.js';
+import { ACCESS_COOKIE, getAccessEdition, issueAccessToken } from './utils/access.js';
+import { BLANK_PAGE, choosePage, toEntryHtml } from './utils/clientHtml.js';
 import { authMiddleware } from './socket/middleware/auth.js';
 import { registerAuthHandlers } from './socket/handlers/authHandlers.js';
 import { registerLobbyHandlers } from './socket/handlers/lobbyHandlers.js';
@@ -78,7 +80,7 @@ app.post('/api/admin/generate-otp', (req, res) => {
     const otpState = setOtp(code);
     revokeAllAccess(io, 'A new access code was issued — please enter it to continue');
     console.log(`OTP generated: ${code} (expires: ${otpState.expiresAt.toISOString()})`);
-    res.json({ code, expiresAt: otpState.expiresAt.toISOString() });
+    res.json({ code, expiresAt: otpState.expiresAt.toISOString(), entryPath: OTP_ENTRY_PATH });
   } catch (err) {
     console.error('Failed to generate OTP:', err);
     res.status(500).json({ code: 'UNKNOWN_ERROR', message: 'Failed to generate OTP' });
@@ -103,16 +105,46 @@ app.post('/api/validate-otp', (req, res) => {
     return;
   }
 
-  const session = createPendingSession(result.data.code);  // store validated OTP code in pending session
-  res.json({ pendingSessionId: session.id });
+  const access = issueAccessToken();
+  if (!access) {
+    res.status(401).json({ code: 'AUTH_ERROR', message: 'Invalid or expired code' });
+    return;
+  }
+  // The proof of OTP entry lives only in this httpOnly cookie; the socket handshake and page
+  // requests read it from there. Lax (not Strict) so links shared in chat apps keep working.
+  res.cookie(ACCESS_COOKIE, access.token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: req.secure,
+    path: '/',
+    expires: access.expiresAt,
+  });
+  res.json({ ok: true });
+});
+
+// Which edition this browser may use (null: none). Lets the client decide what to render.
+app.get('/api/access', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({ edition: getAccessEdition(req.get('cookie')) });
 });
 
 // Serve the built client whenever it exists (must be after API routes to avoid wildcard shadowing)
 const clientDist = path.resolve(__dirname, '../../client/dist');
 if (existsSync(clientDist)) {
-  app.use(express.static(clientDist));
-  app.get('/{*splat}', (_req, res) => {
-    res.sendFile(path.join(clientDist, 'index.html'));
+  const indexHtml = readFileSync(path.join(clientDist, 'index.html'), 'utf8');
+  const entryHtml = toEntryHtml(indexHtml);
+  // The app's html only goes out through the access check below: `/` (index: false) and a direct
+  // `/index.html` request both end up there instead of being served as static files
+  app.use((req, _res, next) => {
+    if (req.path === '/index.html') req.url = '/';
+    next();
+  });
+  app.use(express.static(clientDist, { index: false }));
+  app.get('/{*splat}', (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const page = choosePage(req.path, req.get('cookie'));
+    if (page === 'toApp') res.redirect('/');
+    else res.type('html').send(page === 'entry' ? entryHtml : page === 'app' ? indexHtml : BLANK_PAGE);
   });
 }
 
@@ -140,6 +172,8 @@ io.on('connection', (socket) => {
 
   socket.on('disconnect', () => {
     console.log(`Client disconnected: ${socket.id}`);
+    // A visitor who never picked a username leaves nothing behind
+    if (socket.data.pendingSessionId) removePendingSession(socket.data.pendingSessionId);
     // Read the live session: socket.data holds a snapshot that may be stale
     const session = socket.data.session ? getSessionByToken(socket.data.session.token) : null;
     // Ignore sockets that were already superseded by a newer connection for the same
@@ -167,6 +201,13 @@ setInterval(() => {
     revokeAllAccess(io, 'The access code expired — ask the host for a new one');
   }
 }, 60 * 1000).unref();
+
+if (isPublicAccess()) {
+  console.log('PUBLIC_ACCESS is on — visitors without the OTP can play the neutral edition.');
+}
+if (!process.env['OTP_ENTRY_PATH']) {
+  console.warn(`OTP_ENTRY_PATH is not set — the OTP form is at the default path ${OTP_ENTRY_PATH}.`);
+}
 
 if (!ADMIN_SECRET) {
   console.warn('ADMIN_SECRET is not set — OTP generation is only allowed from localhost.');

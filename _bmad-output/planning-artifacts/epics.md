@@ -246,6 +246,13 @@ Added after the MVP on the owner's request (see decision log D12). Builds on Epi
 
 **FRs covered:** FR37 (extends), NFR2
 
+### Epic 7: Legal Layer (added 2026-10-19)
+**Goal:** The app can later go public without trademarked game names or assets, while friends who entered the OTP keep the original names.
+
+Added on the owner's request (see decision log D13). Splits users into two server-enforced access tiers: OTP users ("original" edition) and everyone else ("neutral" edition). Public access stays switched off until the remaining legal pages (Impressum etc.) exist.
+
+**FRs covered:** FR1–FR4 (extends OTP access), NFR4 (security)
+
 ---
 
 ## Epic 1: Foundation & Authentication
@@ -1054,4 +1061,33 @@ So that **playing feels like handling real cards and I can follow where cards co
 **When** the new state arrives
 **Then** each new card flies from a visible deck to its spot, staggered, for every player who can see it
 **And** with reduced motion enabled, cards appear without flying
+
+## Epic 7: Legal Layer
+
+**Goal:** The app can later go public without trademarked game names or assets, while friends who entered the OTP keep the original names.
+
+### Story 7.1: OTP Access Tier and Neutral Game Edition
+
+As **the owner**,
+I want **OTP users to be told apart from everyone else on the server, and non-OTP lobbies to use neutral game names and card designs**,
+So that **the service can go public later without trademark problems while friends keep playing "Skip-Bo"**.
+
+**Acceptance Criteria:**
+
+**Given** a visitor without a valid OTP access token and public access switched off
+**When** they open any page of the app other than the secret entry path
+**Then** the server returns a blank page (no app bundle, no OTP form, no redirect)
+
+**Given** a visitor opens the secret entry path
+**When** they enter the valid OTP
+**Then** the server sets a signed, httpOnly access token bound to the current OTP, the URL becomes `/`, and they continue to the username and lobby screens
+
+**Given** a client that claims to be an OTP user without a valid server-signed token (forged, expired, or from a rotated OTP)
+**When** it connects or loads the page
+**Then** it is treated as a non-OTP visitor
+
+**Given** OTP users and non-OTP users (public access switched on)
+**When** they look at the lobby
+**Then** each only sees and can join rooms of their own edition; OTP rooms show "Skip-Bo", public rooms show the neutral name and card design
+**And** the UI never mentions that two editions exist
 

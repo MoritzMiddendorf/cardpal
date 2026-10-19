@@ -102,7 +102,7 @@ describe('leaving during a game', () => {
   it('refuses to leave a room while its game is in progress', () => {
     const alice = newSession('Alice', 'socket-a');
     _addRoomForTest({
-      id: 'room-1', name: 'R', gameType: GameType.BLACKJACK, status: 'playing', ownerId: alice.playerId,
+      id: 'room-1', name: 'R', gameType: GameType.BLACKJACK, status: 'playing', ownerId: alice.playerId, edition: 'original',
       players: [{ id: alice.playerId, username: 'Alice', isConnected: true }],
     });
     const socket = createMockSocket({ session: { ...alice, roomId: 'room-1' }, authType: 'token' });
@@ -117,7 +117,7 @@ describe('pause on disconnected active player', () => {
     const alice = newSession('Alice', 'socket-a');
     const bob = newSession('Bob', 'socket-b');
     _addRoomForTest({
-      id: 'room-1', name: 'R', gameType: GameType.BLACKJACK, status: 'playing', ownerId: alice.playerId,
+      id: 'room-1', name: 'R', gameType: GameType.BLACKJACK, status: 'playing', ownerId: alice.playerId, edition: 'original',
       players: [
         { id: alice.playerId, username: 'Alice', isConnected: true },
         { id: bob.playerId, username: 'Bob', isConnected: true },

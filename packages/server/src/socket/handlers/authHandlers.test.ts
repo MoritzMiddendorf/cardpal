@@ -24,6 +24,7 @@ function createMockSocket(data: Partial<AppSocket['data']> = {}, id = 'socket-1'
     data: { ...data } as AppSocket['data'],
     emit: vi.fn(),
     join: vi.fn(),
+    leave: vi.fn(),
     on: vi.fn((event: string, handler: Function) => {
       listeners.set(event, handler);
     }),
@@ -49,6 +50,7 @@ function makeRoom(overrides: Partial<Room> = {}): Room {
     status: 'lobby',
     ownerId: 'player-token',
     players: [{ id: 'player-token', username: 'Bob', isConnected: false }],
+    edition: 'original',
     ...overrides,
   };
 }
@@ -93,6 +95,21 @@ describe('handleSetUsername', () => {
     const session = getSessionByToken(authCall![1].token);
     expect(session).not.toBeNull();
     expect(session!.username).toBe('Alice');
+    expect(session!.edition).toBe('original');
+    expect(authCall![1]).toHaveProperty('edition', 'original');
+    expect(socket.join).toHaveBeenCalledWith('edition:original');
+  });
+
+  it('creates a neutral-edition session from a public pending session', () => {
+    const pending = createPendingSession(null);
+    const socket = createMockSocket({ pendingSessionId: pending.id, authType: 'pending' });
+
+    handleSetUsername(socket, createMockIo(), { username: 'Pat' });
+
+    const authCall = (socket.emit as ReturnType<typeof vi.fn>).mock.calls.find((c: unknown[]) => c[0] === 'authenticated');
+    expect(authCall![1]).toHaveProperty('edition', 'neutral');
+    expect(getSessionByToken(authCall![1].token)!.edition).toBe('neutral');
+    expect(socket.join).toHaveBeenCalledWith('edition:neutral');
   });
 
   it('emits VALIDATION_ERROR for invalid username (special chars)', () => {
@@ -182,6 +199,8 @@ describe('handleAuthenticate', () => {
       token: session.token,
       playerId: session.playerId,
       username: 'Bob',
+      edition: 'original',
+      roomId: undefined,
     });
     expect(socket.data.session).toBeDefined();
     expect(socket.data.authType).toBe('token');
@@ -268,6 +287,8 @@ describe('registerAuthHandlers', () => {
       token: session.token,
       playerId: session.playerId,
       username: 'Alice',
+      edition: 'original',
+      roomId: undefined,
     });
 
     // socketId should be updated
@@ -441,7 +462,7 @@ describe('restoreRoomConnection (via handleAuthenticate)', () => {
 
     handleAuthenticate(socket, io, { token: session.token });
 
-    expect(socket.join).not.toHaveBeenCalled();
+    expect(socket.join).not.toHaveBeenCalledWith(expect.not.stringMatching(/^edition:/));
     expect(socket.emit).toHaveBeenCalledWith('authenticated', expect.any(Object));
   });
 });

@@ -1,5 +1,5 @@
 import { GameType } from '@cardpal/shared';
-import type { RoomInfo, RoomState } from '@cardpal/shared';
+import type { Edition, RoomInfo, RoomState } from '@cardpal/shared';
 import { generateRoomName } from '../utils/generateRoomName.js';
 
 interface RoomPlayer {
@@ -15,6 +15,8 @@ export interface Room {
   status: 'lobby' | 'playing';
   ownerId: string;
   players: RoomPlayer[];
+  /** Edition of the creator's session. Only sessions of the same edition can see or join the room. */
+  edition: Edition;
 }
 
 export const GAME_MIN_PLAYERS: Record<GameType, number> = {
@@ -29,8 +31,8 @@ export const GAME_MAX_PLAYERS: Record<GameType, number> = {
 
 const rooms = new Map<string, Room>();
 
-export function getRooms(): RoomInfo[] {
-  return Array.from(rooms.values()).map((room) => ({
+export function getRooms(edition: Edition): RoomInfo[] {
+  return Array.from(rooms.values()).filter((room) => room.edition === edition).map((room) => ({
     id: room.id,
     name: room.name,
     gameType: room.gameType,
@@ -54,6 +56,7 @@ export function createRoom(
   gameType: GameType,
   ownerToken: string,
   ownerUsername: string,
+  edition: Edition,
 ): Room {
   const id = crypto.randomUUID();
   const name = generateRoomName();
@@ -64,6 +67,7 @@ export function createRoom(
     status: 'lobby',
     ownerId: ownerToken,
     players: [{ id: ownerToken, username: ownerUsername, isConnected: true }],
+    edition,
   };
   rooms.set(id, room);
   return { ...room, players: room.players.map((p) => ({ ...p })) };

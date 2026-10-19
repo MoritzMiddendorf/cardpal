@@ -1,12 +1,14 @@
 import { create } from 'zustand';
-import type { RoomInfo, RoomState, FilteredGameState } from '@cardpal/shared';
+import type { Edition, RoomInfo, RoomState, FilteredGameState } from '@cardpal/shared';
 
-type Screen = 'otp' | 'username' | 'lobby' | 'room' | 'game';
+/** `blank` renders nothing: the boot check is pending, or this visitor has no access. */
+type Screen = 'blank' | 'otp' | 'username' | 'lobby' | 'room' | 'game';
 
 interface AppState {
   // Auth
   sessionToken: string | null;
-  pendingSessionId: string | null;
+  /** Server-assigned edition of this session (null until authenticated). Decides game names and card designs. */
+  edition: Edition | null;
   /** Public player id assigned by the server (used for ownership/turn checks). */
   playerId: string | null;
   username: string | null;
@@ -30,7 +32,7 @@ interface AppState {
 
   // Actions
   setSessionToken: (token: string | null) => void;
-  setPendingSessionId: (id: string | null) => void;
+  setEdition: (edition: Edition | null) => void;
   setPlayerId: (playerId: string | null) => void;
   setUsername: (username: string | null) => void;
   setConnectionStatus: (status: AppState['connectionStatus']) => void;
@@ -45,11 +47,11 @@ interface AppState {
 
 export const useAppStore = create<AppState>((set) => ({
   sessionToken: localStorage.getItem('cardpal_token'),
-  pendingSessionId: null,
+  edition: null,
   playerId: null,
   username: null,
   connectionStatus: 'disconnected',
-  screen: 'otp',
+  screen: 'blank',
   lobbyRooms: [],
   currentRoom: null,
   gameState: null,
@@ -66,7 +68,7 @@ export const useAppStore = create<AppState>((set) => ({
     }
     set({ sessionToken: token });
   },
-  setPendingSessionId: (pendingSessionId) => set({ pendingSessionId }),
+  setEdition: (edition) => set({ edition }),
   setPlayerId: (playerId) => set({ playerId }),
   setUsername: (username) => set({ username }),
   setConnectionStatus: (connectionStatus) => set({ connectionStatus }),

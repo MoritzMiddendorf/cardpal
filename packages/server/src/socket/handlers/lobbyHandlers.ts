@@ -1,16 +1,37 @@
 import { gameTypeSchema, GameType } from '@cardpal/shared';
+import type { Edition } from '@cardpal/shared';
 import { getRooms, createRoom, toRoomState, getRoomById, addPlayerToRoom, removePlayerFromRoom, setRoomStatus, GAME_MAX_PLAYERS } from '../../state/rooms.js';
 import { updateSessionRoomId, getSessionByPlayerId } from '../../state/sessions.js';
 import { getGame, removeGame } from '../../state/games.js';
 import type { AppSocket, AppServer } from '../types.js';
 import { safeHandler } from '../safeHandler.js';
 
-export function sendLobbyState(socket: AppSocket): void {
-  socket.emit('lobbyState', { rooms: getRooms() });
+const EDITIONS: readonly Edition[] = ['original', 'neutral'];
+
+/** Socket.io room that receives the lobby list of one edition. */
+export function editionChannel(edition: Edition): string {
+  return `edition:${edition}`;
 }
 
+/** Called once a socket has a session: from now on it receives its edition's lobby updates. */
+export function joinEditionChannel(socket: AppSocket, edition: Edition): void {
+  for (const other of EDITIONS) {
+    if (other !== edition) socket.leave(editionChannel(other));
+  }
+  socket.join(editionChannel(edition));
+}
+
+export function sendLobbyState(socket: AppSocket): void {
+  const session = socket.data.session;
+  if (!session) return;
+  socket.emit('lobbyState', { rooms: getRooms(session.edition) });
+}
+
+/** Every session only ever sees the rooms of its own edition. */
 export function broadcastLobbyState(io: AppServer): void {
-  io.emit('lobbyState', { rooms: getRooms() });
+  for (const edition of EDITIONS) {
+    io.to(editionChannel(edition)).emit('lobbyState', { rooms: getRooms(edition) });
+  }
 }
 
 export function handleCreateRoom(
@@ -35,7 +56,7 @@ export function handleCreateRoom(
     return;
   }
 
-  const room = createRoom(result.data, session.playerId, session.username);
+  const room = createRoom(result.data, session.playerId, session.username, session.edition);
 
   socket.join(room.id);
 
@@ -71,7 +92,8 @@ export function handleJoinRoom(
   }
 
   const room = getRoomById(data.roomId);
-  if (!room) {
+  // A room of the other edition is answered exactly like a missing one: its existence stays hidden
+  if (!room || room.edition !== session.edition) {
     socket.emit('error', { code: 'ROOM_NOT_FOUND', message: 'Room not found' });
     return;
   }
@@ -193,7 +215,7 @@ export function handleKickPlayer(
     updateSessionRoomId(targetSession.token, null);
     io.in(targetSession.socketId).socketsLeave(room.id);
     io.to(targetSession.socketId).emit('kicked', { roomName: room.name });
-    io.to(targetSession.socketId).emit('lobbyState', { rooms: getRooms() });
+    io.to(targetSession.socketId).emit('lobbyState', { rooms: getRooms(targetSession.edition) });
   }
 
   if (updatedRoom) {

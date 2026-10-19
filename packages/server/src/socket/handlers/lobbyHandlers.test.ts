@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { sendLobbyState, broadcastLobbyState, handleCreateRoom, handleJoinRoom, handleLeaveRoom, registerLobbyHandlers } from './lobbyHandlers.js';
+import { sendLobbyState, broadcastLobbyState, joinEditionChannel, editionChannel, handleCreateRoom, handleJoinRoom, handleLeaveRoom, registerLobbyHandlers } from './lobbyHandlers.js';
 import { clearRooms, _addRoomForTest, getRooms, getRoomById, GAME_MAX_PLAYERS } from '../../state/rooms.js';
 import { createPendingSession, createSession, clearPendingSessions, clearSessions, getSessionByToken } from '../../state/sessions.js';
 import { setOtp, clearOtp } from '../../state/otp.js';
@@ -15,6 +15,7 @@ function makeRoom(overrides: Partial<Room> = {}): Room {
     status: 'lobby',
     ownerId: 'owner-token',
     players: [{ id: 'owner-token', username: 'Alice', isConnected: true }],
+    edition: 'original',
     ...overrides,
   };
 }
@@ -43,55 +44,87 @@ describe('Lobby Handlers', () => {
     clearRooms();
   });
 
+  const summary = {
+    id: 'room-1',
+    name: 'Test Room',
+    gameType: GameType.BLACKJACK,
+    playerCount: 1,
+    maxPlayers: 4,
+    status: 'lobby',
+  };
+
+  function sessionSocket(edition: 'original' | 'neutral') {
+    return createMockSocket({ session: { token: 't', playerId: 'p', username: 'U', socketId: 'socket-1', roomId: null, otpCode: null, edition } });
+  }
+
   describe('sendLobbyState', () => {
     it('emits lobbyState with empty rooms to a single socket', () => {
-      const socket = createMockSocket();
+      const socket = sessionSocket('original');
       sendLobbyState(socket);
       expect(socket.emit).toHaveBeenCalledWith('lobbyState', { rooms: [] });
     });
 
     it('emits lobbyState with room summaries to a single socket', () => {
       _addRoomForTest(makeRoom());
+      const socket = sessionSocket('original');
+      sendLobbyState(socket);
+      expect(socket.emit).toHaveBeenCalledWith('lobbyState', { rooms: [summary] });
+    });
+
+    it('only lists rooms of the session\'s own edition', () => {
+      _addRoomForTest(makeRoom());
+      _addRoomForTest(makeRoom({ id: 'room-2', edition: 'neutral' }));
+      const original = sessionSocket('original');
+      const neutral = sessionSocket('neutral');
+      sendLobbyState(original);
+      sendLobbyState(neutral);
+      expect(original.emit).toHaveBeenCalledWith('lobbyState', { rooms: [summary] });
+      expect(neutral.emit).toHaveBeenCalledWith('lobbyState', { rooms: [{ ...summary, id: 'room-2' }] });
+    });
+
+    it('sends nothing to a socket without a session', () => {
       const socket = createMockSocket();
       sendLobbyState(socket);
-      expect(socket.emit).toHaveBeenCalledWith('lobbyState', {
-        rooms: [
-          {
-            id: 'room-1',
-            name: 'Test Room',
-            gameType: GameType.BLACKJACK,
-            playerCount: 1,
-            maxPlayers: 4,
-            status: 'lobby',
-          },
-        ],
-      });
+      expect(socket.emit).not.toHaveBeenCalled();
     });
   });
 
   describe('broadcastLobbyState', () => {
-    it('emits lobbyState to all connected clients via io.emit', () => {
+    function createChannelServer() {
+      const emits = new Map<string, ReturnType<typeof vi.fn>>();
+      return {
+        emit: vi.fn(),
+        to: vi.fn((channel: string) => {
+          if (!emits.has(channel)) emits.set(channel, vi.fn());
+          return { emit: emits.get(channel)! };
+        }),
+        _emits: emits,
+      } as unknown as AppServer & { _emits: Map<string, ReturnType<typeof vi.fn>> };
+    }
+
+    it('sends each edition channel only its own rooms, never a global broadcast', () => {
       _addRoomForTest(makeRoom());
-      const io = createMockServer();
+      _addRoomForTest(makeRoom({ id: 'room-2', edition: 'neutral' }));
+      const io = createChannelServer();
       broadcastLobbyState(io);
-      expect(io.emit).toHaveBeenCalledWith('lobbyState', {
-        rooms: [
-          {
-            id: 'room-1',
-            name: 'Test Room',
-            gameType: GameType.BLACKJACK,
-            playerCount: 1,
-            maxPlayers: 4,
-            status: 'lobby',
-          },
-        ],
-      });
+      expect(io.emit).not.toHaveBeenCalled();
+      expect(io._emits.get(editionChannel('original'))).toHaveBeenCalledWith('lobbyState', { rooms: [summary] });
+      expect(io._emits.get(editionChannel('neutral'))).toHaveBeenCalledWith('lobbyState', { rooms: [{ ...summary, id: 'room-2' }] });
     });
 
     it('emits empty rooms when no rooms exist', () => {
       const io = createMockServer();
       broadcastLobbyState(io);
-      expect(io.emit).toHaveBeenCalledWith('lobbyState', { rooms: [] });
+      expect(io._toEmit).toHaveBeenCalledWith('lobbyState', { rooms: [] });
+    });
+  });
+
+  describe('joinEditionChannel', () => {
+    it('joins the edition channel and leaves the other one', () => {
+      const socket = createMockSocket();
+      joinEditionChannel(socket, 'neutral');
+      expect(socket.join).toHaveBeenCalledWith('edition:neutral');
+      expect(socket.leave).toHaveBeenCalledWith('edition:original');
     });
   });
 });
@@ -131,12 +164,12 @@ describe('handleCreateRoom', () => {
     expect(socket.join).toHaveBeenCalled();
 
     // Should broadcast lobby state
-    expect(io.emit).toHaveBeenCalledWith('lobbyState', expect.objectContaining({
+    expect(io._toEmit).toHaveBeenCalledWith('lobbyState', expect.objectContaining({
       rooms: expect.arrayContaining([expect.objectContaining({ gameType: 'blackjack' })]),
     }));
 
     // Room should be in getRooms
-    expect(getRooms()).toHaveLength(1);
+    expect(getRooms('original')).toHaveLength(1);
 
     // Session roomId should be updated
     const updatedSession = getSessionByToken(session.token);
@@ -161,7 +194,7 @@ describe('handleCreateRoom', () => {
       code: 'VALIDATION_ERROR',
       message: 'Invalid game type',
     });
-    expect(getRooms()).toHaveLength(0);
+    expect(getRooms('original')).toHaveLength(0);
   });
 
   it('emits AUTH_ERROR when not authenticated', () => {
@@ -193,7 +226,7 @@ describe('handleCreateRoom', () => {
       code: 'VALIDATION_ERROR',
       message: 'Already in a room',
     });
-    expect(getRooms()).toHaveLength(0);
+    expect(getRooms('original')).toHaveLength(0);
   });
 
   it('creates Skip-Bo room correctly', () => {
@@ -221,6 +254,31 @@ describe('handleJoinRoom', () => {
     clearOtp();
   });
 
+  it('answers a room of the other edition exactly like a missing room', () => {
+    _addRoomForTest(makeRoom({ edition: 'neutral' }));
+    setOtp('A7X-K9M');
+    const pending = createPendingSession('A7X-K9M');
+    const session = createSession(pending.id, 'Bob', 'socket-2');
+    const socket = createMockSocket({ session: { ...session }, authType: 'token' }, 'socket-2');
+
+    handleJoinRoom(socket, createMockServer(), { roomId: 'room-1' });
+
+    expect(socket.emit).toHaveBeenCalledWith('error', { code: 'ROOM_NOT_FOUND', message: 'Room not found' });
+    expect(getRoomById('room-1')!.players).toHaveLength(1);
+    expect(socket.join).not.toHaveBeenCalled();
+  });
+
+  it('creates rooms in the edition of the creator', () => {
+    const pending = createPendingSession(null);
+    const session = createSession(pending.id, 'Pat', 'socket-3');
+    const socket = createMockSocket({ session: { ...session }, authType: 'token' }, 'socket-3');
+
+    handleCreateRoom(socket, createMockServer(), { gameType: GameType.SKIPBO });
+
+    expect(getRooms('neutral')).toHaveLength(1);
+    expect(getRooms('original')).toHaveLength(0);
+  });
+
   it('joins room and emits roomState for valid input', () => {
     _addRoomForTest(makeRoom());
     setOtp('A7X-K9M');
@@ -245,7 +303,7 @@ describe('handleJoinRoom', () => {
     }));
 
     // Should broadcast lobby state
-    expect(io.emit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
+    expect(io._toEmit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
 
     // Session roomId should be updated
     const updatedSession = getSessionByToken(session.token);
@@ -416,7 +474,7 @@ describe('handleLeaveRoom', () => {
     }));
 
     // Should broadcast lobby state
-    expect(io.emit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
+    expect(io._toEmit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
 
     // Should send lobby state directly to leaving socket
     expect(socket.emit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
@@ -477,13 +535,13 @@ describe('handleLeaveRoom', () => {
 
     // Room should be deleted
     expect(getRoomById('room-1')).toBeNull();
-    expect(getRooms()).toHaveLength(0);
+    expect(getRooms('original')).toHaveLength(0);
 
     // Should NOT emit roomState to room (no one left)
-    expect((io as any).to).not.toHaveBeenCalled();
+    expect((io as any).to).not.toHaveBeenCalledWith('room-1');
 
     // Should still broadcast lobby state (room disappeared)
-    expect(io.emit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
+    expect(io._toEmit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
   });
 
   it('emits VALIDATION_ERROR when not in a room', () => {

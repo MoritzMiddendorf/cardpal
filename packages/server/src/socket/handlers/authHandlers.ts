@@ -1,10 +1,10 @@
 import { usernameRequestSchema } from '@cardpal/shared';
-import { createSession, getSessionByToken, updateSessionSocketId, isUsernameTaken } from '../../state/sessions.js';
-import { isOtpValid } from '../../state/otp.js';
+import { createSession, getPendingSession, getSessionByToken, updateSessionSocketId, isUsernameTaken } from '../../state/sessions.js';
+import { isSessionValid } from '../../utils/access.js';
 import { setPlayerConnected, getRoomById, toRoomState } from '../../state/rooms.js';
 import { getGame } from '../../state/games.js';
 import { broadcastGameState } from './gameHandlers.js';
-import { sendLobbyState, broadcastLobbyState } from './lobbyHandlers.js';
+import { sendLobbyState, broadcastLobbyState, joinEditionChannel } from './lobbyHandlers.js';
 import type { AppSocket, AppServer } from '../types.js';
 import { safeHandler } from '../safeHandler.js';
 
@@ -26,7 +26,13 @@ export function handleSetUsername(
     return;
   }
 
-  if (isUsernameTaken(result.data.username)) {
+  const pending = getPendingSession(pendingSessionId);
+  if (!pending) {
+    socket.emit('error', { code: 'AUTH_ERROR', message: 'Session creation failed' });
+    return;
+  }
+
+  if (isUsernameTaken(result.data.username, pending.edition)) {
     socket.emit('error', { code: 'VALIDATION_ERROR', message: 'That name is already taken' });
     return;
   }
@@ -35,7 +41,8 @@ export function handleSetUsername(
     const session = createSession(pendingSessionId, result.data.username, socket.id);  // otpCode taken from pending session
     socket.data.session = session;
     socket.data.authType = 'token';
-    socket.emit('authenticated', { token: session.token, playerId: session.playerId, username: session.username });
+    socket.emit('authenticated', { token: session.token, playerId: session.playerId, username: session.username, edition: session.edition });
+    joinEditionChannel(socket, session.edition);
     sendLobbyState(socket);
     console.log(`Session created: ${session.username} (token: ${session.token.slice(0, 8)}...)`);
   } catch {
@@ -65,7 +72,7 @@ export function handleAuthenticate(
   data: { token: string },
 ): void {
   const session = typeof data?.token === 'string' ? getSessionByToken(data.token) : null;
-  if (!session || !isOtpValid(session.otpCode)) {
+  if (!session || !isSessionValid(session)) {
     socket.emit('error', { code: 'AUTH_ERROR', message: 'Session expired' });
     return;
   }
@@ -73,7 +80,11 @@ export function handleAuthenticate(
   updateSessionSocketId(session.token, socket.id);
   socket.data.session = session;
   socket.data.authType = 'token';
-  socket.emit('authenticated', { token: session.token, playerId: session.playerId, username: session.username, roomId: session.roomId ?? undefined });
+  socket.emit('authenticated', {
+    token: session.token, playerId: session.playerId, username: session.username, edition: session.edition,
+    roomId: session.roomId ?? undefined,
+  });
+  joinEditionChannel(socket, session.edition);
   restoreRoomConnection(socket, io, session);
   console.log(`Session restored: ${session.username} (token: ${session.token.slice(0, 8)}...)`);
 }
@@ -89,8 +100,10 @@ export function registerAuthHandlers(socket: AppSocket, io: AppServer): void {
       token: socket.data.session.token,
       playerId: socket.data.session.playerId,
       username: socket.data.session.username,
+      edition: socket.data.session.edition,
       roomId: socket.data.session.roomId ?? undefined,
     });
+    joinEditionChannel(socket, socket.data.session.edition);
     sendLobbyState(socket);
     restoreRoomConnection(socket, io, socket.data.session);
     console.log(`Session auto-restored: ${socket.data.session.username} (token: ${socket.data.session.token.slice(0, 8)}...)`);

@@ -11,6 +11,7 @@ function makeRoom(overrides: Partial<Room> = {}): Room {
     status: 'lobby',
     ownerId: 'owner-token',
     players: [{ id: 'owner-token', username: 'Alice', isConnected: true }],
+    edition: 'original',
     ...overrides,
   };
 }
@@ -22,12 +23,12 @@ describe('Room State Management', () => {
 
   describe('getRooms', () => {
     it('returns empty array when no rooms exist', () => {
-      expect(getRooms()).toEqual([]);
+      expect(getRooms('original')).toEqual([]);
     });
 
     it('returns RoomInfo summaries for existing rooms', () => {
       _addRoomForTest(makeRoom());
-      const rooms = getRooms();
+      const rooms = getRooms('original');
       expect(rooms).toHaveLength(1);
       expect(rooms[0]).toEqual({
         id: 'room-1',
@@ -47,14 +48,14 @@ describe('Room State Management', () => {
           { id: 'p3', username: 'Charlie', isConnected: false },
         ],
       }));
-      const rooms = getRooms();
+      const rooms = getRooms('original');
       expect(rooms[0]!.playerCount).toBe(3);
     });
 
     it('uses correct maxPlayers per game type', () => {
       _addRoomForTest(makeRoom({ id: 'bj', gameType: GameType.BLACKJACK }));
       _addRoomForTest(makeRoom({ id: 'sb', gameType: GameType.SKIPBO }));
-      const rooms = getRooms();
+      const rooms = getRooms('original');
       const bj = rooms.find((r) => r.id === 'bj');
       const sb = rooms.find((r) => r.id === 'sb');
       expect(bj!.maxPlayers).toBe(4);
@@ -64,7 +65,7 @@ describe('Room State Management', () => {
     it('returns multiple rooms', () => {
       _addRoomForTest(makeRoom({ id: 'r1', name: 'Room A' }));
       _addRoomForTest(makeRoom({ id: 'r2', name: 'Room B' }));
-      expect(getRooms()).toHaveLength(2);
+      expect(getRooms('original')).toHaveLength(2);
     });
   });
 
@@ -103,37 +104,37 @@ describe('Room State Management', () => {
     it('removes all rooms', () => {
       _addRoomForTest(makeRoom({ id: 'r1' }));
       _addRoomForTest(makeRoom({ id: 'r2' }));
-      expect(getRooms()).toHaveLength(2);
+      expect(getRooms('original')).toHaveLength(2);
       clearRooms();
-      expect(getRooms()).toEqual([]);
+      expect(getRooms('original')).toEqual([]);
     });
   });
 
   describe('createRoom', () => {
     it('returns a Room with valid UUID id', () => {
-      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice');
+      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice', 'original');
       expect(room.id).toMatch(
         /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
       );
     });
 
     it('generates a readable room name in Word-Word format', () => {
-      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice');
+      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice', 'original');
       expect(room.name).toMatch(/^[A-Z][a-z]+-[A-Z][a-z]+$/);
     });
 
     it('sets status to lobby', () => {
-      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice');
+      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice', 'original');
       expect(room.status).toBe('lobby');
     });
 
     it('sets ownerId to ownerToken', () => {
-      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice');
+      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice', 'original');
       expect(room.ownerId).toBe('owner-token');
     });
 
     it('places owner as first player with isConnected=true', () => {
-      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice');
+      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice', 'original');
       expect(room.players).toHaveLength(1);
       expect(room.players[0]).toEqual({
         id: 'owner-token',
@@ -143,14 +144,14 @@ describe('Room State Management', () => {
     });
 
     it('stores the correct gameType', () => {
-      const bj = createRoom(GameType.BLACKJACK, 'token', 'Alice');
-      const sb = createRoom(GameType.SKIPBO, 'token2', 'Bob');
+      const bj = createRoom(GameType.BLACKJACK, 'token', 'Alice', 'original');
+      const sb = createRoom(GameType.SKIPBO, 'token2', 'Bob', 'original');
       expect(bj.gameType).toBe(GameType.BLACKJACK);
       expect(sb.gameType).toBe(GameType.SKIPBO);
     });
 
     it('returns a copy, not a reference to internal state', () => {
-      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice');
+      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice', 'original');
       room.name = 'Mutated';
       room.players.push({ id: 'extra', username: 'Hacker', isConnected: true });
 
@@ -160,7 +161,7 @@ describe('Room State Management', () => {
     });
 
     it('deep-copies player objects — mutating player properties does not affect internal state', () => {
-      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice');
+      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice', 'original');
       room.players[0]!.username = 'Hacked';
 
       const stored = getRoomById(room.id)!;
@@ -168,8 +169,8 @@ describe('Room State Management', () => {
     });
 
     it('makes room visible in getRooms()', () => {
-      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice');
-      const rooms = getRooms();
+      const room = createRoom(GameType.BLACKJACK, 'owner-token', 'Alice', 'original');
+      const rooms = getRooms('original');
       expect(rooms).toHaveLength(1);
       expect(rooms[0]!.id).toBe(room.id);
     });

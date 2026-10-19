@@ -4,6 +4,7 @@ export type {
   OtpValidationRequest,
   OtpValidationResponse,
   UsernameRequest,
+  Edition,
 } from './types/auth.js';
 
 export type { ErrorCode, ErrorPayload } from './types/errors.js';

@@ -20,7 +20,9 @@ import {
   newlyDrawnIndices,
 } from './skipBoHelpers.js';
 import type { SourceSelection, DropTarget } from './skipBoHelpers.js';
+import { GameType } from '@cardpal/shared';
 import type { FilteredGameState, GameAction, PlayerResult, SkipBoCard as SkipBoCardType } from '@cardpal/shared';
+import { gameName } from '../../utils/editions.js';
 import './SkipBoGameScreen.css';
 
 function resultLabel(result: PlayerResult['result']): string {
@@ -36,6 +38,7 @@ export function SkipBoGameScreen() {
   const previousGameState = useAppStore((s) => s.previousGameState);
   const currentRoom = useAppStore((s) => s.currentRoom);
   const playerId = useAppStore((s) => s.playerId);
+  const edition = useAppStore((s) => s.edition);
 
   const [selectedSource, setSelectedSource] = useState<SourceSelection | null>(null);
   /** Source of a card that was just dropped; hidden until the server's next state arrives. */
@@ -235,7 +238,7 @@ export function SkipBoGameScreen() {
 
   return (
     <div className="skipbo-game app-page" onClick={handleBackgroundClick}>
-      <TopBar context={currentRoom ? `${currentRoom.name} · Skip-Bo` : 'Skip-Bo'} />
+      <TopBar context={currentRoom ? `${currentRoom.name} · ${gameName(GameType.SKIPBO, edition)}` : gameName(GameType.SKIPBO, edition)} />
       <main className="app-main skipbo-table">
         {/* Results Overlay */}
         {isFinished && results && (
