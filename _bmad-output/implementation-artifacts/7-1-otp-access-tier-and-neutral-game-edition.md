@@ -1,6 +1,6 @@
 # Story 7.1: OTP Access Tier and Neutral Game Edition
 
-Status: review
+Status: done
 
 ## Story
 
@@ -192,8 +192,28 @@ Claude (Claude Code, cloud session)
 - scripts/smoke-test.ts
 - scripts/generate-otp.ts
 
+## Senior Developer Review (AI)
+
+- **Date:** 2026-10-19 · **Outcome:** Approved after fixes (all HIGH and MEDIUM fixed automatically)
+- **ACs:** 1–9 implemented. Tasks verified against the code; File List matches git.
+
+### Action Items
+
+- [x] [HIGH] AC1 bypass: `express.static` still served `/index.html` directly, handing the app to strangers. Now rewritten
+  to `/` so it goes through the access gate; smoke test checks it. [packages/server/src/index.ts]
+- [x] [MEDIUM] Usernames were unique across editions, so a public player picking an OTP player's name got "already
+  taken", revealing the other edition (AC7). Uniqueness is now per edition; test added.
+  [packages/server/src/state/sessions.ts, authHandlers.ts, kickAndNames.test.ts]
+- [x] [MEDIUM] Socket middleware used `getOtp()!` and `handshake.headers.cookie` without guards; now defensive.
+  [packages/server/src/socket/middleware/auth.ts]
+- [ ] [LOW] Dev-only entry path `/table` in `client/src/utils/access.ts` duplicates the server default; only matters in
+  `pnpm dev` with a custom `OTP_ENTRY_PATH`. Left as is.
+- [ ] [LOW] `normalizeEntryPath` rejects any path starting with `/api` (e.g. `/apiary`). Harmless; left as is.
+
 ## Change Log
 
 - 2026-10-19: Implemented story 7.1. The access cookie is `SameSite=Lax` instead of the planned `Strict`: with
   Strict, opening the site from a link in a chat app sends no cookie on that first navigation and the page is blank.
   Lax still blocks cross-site POSTs.
+- 2026-10-19: Code review: fixed 1 HIGH and 2 MEDIUM findings (direct `/index.html`, per-edition usernames, defensive
+  handshake parsing). Status done.

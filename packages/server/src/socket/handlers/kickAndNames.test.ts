@@ -110,4 +110,11 @@ describe('duplicate usernames', () => {
     expect(socket.emit).toHaveBeenCalledWith('error', { code: 'VALIDATION_ERROR', message: 'That name is already taken' });
     expect(socket.data.session).toBeUndefined();
   });
+
+  it('lets the other edition use the same name, so a clash never reveals it', () => {
+    newSession('Alice', 'socket-a');
+    const socket = createMockSocket({ pendingSessionId: createPendingSession(null).id, authType: 'pending' }, 'socket-x');
+    handleSetUsername(socket, createMockServer(), { username: 'Alice' });
+    expect(socket.data.session).toMatchObject({ username: 'Alice', edition: 'neutral' });
+  });
 });

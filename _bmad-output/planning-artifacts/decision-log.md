@@ -146,7 +146,7 @@ the top of the log when a decision changes; keep "Current status" up to date.
 - **Host can remove players** (`kickPlayer`): any non-host player in the lobby; during a game only
   **disconnected** players, which ends the game and returns the room to the lobby. This is the escape
   hatch for the PRD rule "no timeout kicks": a no-show never blocks a table forever.
-- Usernames are unique per OTP, case-insensitively.
+- Usernames are unique per OTP (per edition since D13), case-insensitively.
 
 ### D7 — Game rules scope for the first try-out · 2026-10-07
 

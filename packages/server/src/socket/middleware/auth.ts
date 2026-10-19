@@ -21,9 +21,10 @@ export function authMiddleware(socket: AppSocket, next: (err?: Error) => void): 
     return next(new Error('AUTH_ERROR'));
   }
 
-  const edition = getAccessEdition(socket.handshake.headers.cookie);
-  if (edition) {
-    const pending = createPendingSession(edition === 'original' ? getOtp()!.code : null);
+  const edition = getAccessEdition(socket.handshake.headers?.cookie);
+  const otpCode = edition === 'original' ? getOtp()?.code : null;
+  if (edition && otpCode !== undefined) {
+    const pending = createPendingSession(otpCode);
     socket.data.pendingSessionId = pending.id;
     socket.data.authType = 'pending';
     return next();

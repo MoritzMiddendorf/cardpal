@@ -133,7 +133,12 @@ const clientDist = path.resolve(__dirname, '../../client/dist');
 if (existsSync(clientDist)) {
   const indexHtml = readFileSync(path.join(clientDist, 'index.html'), 'utf8');
   const entryHtml = toEntryHtml(indexHtml);
-  // index: false: `/` must go through the access check below instead of serving index.html
+  // The app's html only goes out through the access check below: `/` (index: false) and a direct
+  // `/index.html` request both end up there instead of being served as static files
+  app.use((req, _res, next) => {
+    if (req.path === '/index.html') req.url = '/';
+    next();
+  });
   app.use(express.static(clientDist, { index: false }));
   app.get('/{*splat}', (req, res) => {
     res.set('Cache-Control', 'no-store');

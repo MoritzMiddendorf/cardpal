@@ -89,5 +89,5 @@ development_status:
 
   # Epic 7: Legal Layer (added 2026-10-19, see decision log D13)
   epic-7: in-progress
-  7-1-otp-access-tier-and-neutral-game-edition: review
+  7-1-otp-access-tier-and-neutral-game-edition: done
   epic-7-retrospective: optional

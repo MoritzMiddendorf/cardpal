@@ -98,6 +98,7 @@ async function main(): Promise<void> {
   // The private app shows nothing to strangers; the OTP form only lives at the secret entry path
   const strangerPage = await getPage('/');
   check(!strangerPage.includes('id="root"') && !strangerPage.includes('<script'), 'default page is blank without OTP access');
+  check(!(await getPage('/index.html')).includes('id="root"'), 'index.html is not served directly without OTP access');
   const entryPage = await getPage(entryPath);
   check(entryPage.includes('id="root"') && entryPage.includes('cardpal-entry'), 'client app is served at the entry path');
   check(!entryPage.includes(entryPath), 'entry page does not reveal its own path');
