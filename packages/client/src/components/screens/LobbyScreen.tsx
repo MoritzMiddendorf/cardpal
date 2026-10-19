@@ -4,23 +4,15 @@ import { socket } from '../../socket/client.js';
 import { GameType } from '@cardpal/shared';
 import type { RoomInfo, ErrorPayload } from '@cardpal/shared';
 import { TopBar } from '../ui/TopBar.js';
+import { gameName, gameTagline } from '../../utils/editions.js';
 import './LobbyScreen.css';
-
-const GAME_TYPE_LABELS: Record<GameType, string> = {
-  [GameType.BLACKJACK]: 'Blackjack',
-  [GameType.SKIPBO]: 'Skip-Bo',
-};
-
-const GAME_TYPE_DESCRIPTIONS: Record<GameType, string> = {
-  [GameType.BLACKJACK]: '2–4 players · beat the dealer to 21',
-  [GameType.SKIPBO]: '2–6 players · empty your stock pile first',
-};
 
 const GAME_TYPES = [GameType.BLACKJACK, GameType.SKIPBO] as const;
 
 export function LobbyScreen() {
   const lobbyRooms = useAppStore((s) => s.lobbyRooms);
   const notice = useAppStore((s) => s.errorMessage);
+  const edition = useAppStore((s) => s.edition);
 
   const [isCreating, setIsCreating] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -103,8 +95,8 @@ export function LobbyScreen() {
                   onClick={() => handlePickGameType(gt)}
                   disabled={isSubmitting}
                 >
-                  <span className="lobby-picker-name">{GAME_TYPE_LABELS[gt]}</span>
-                  <span className="lobby-picker-desc">{GAME_TYPE_DESCRIPTIONS[gt]}</span>
+                  <span className="lobby-picker-name">{gameName(gt, edition)}</span>
+                  <span className="lobby-picker-desc">{gameTagline(gt)}</span>
                 </button>
               ))}
             </div>
@@ -131,7 +123,7 @@ export function LobbyScreen() {
                   onClick={canJoin ? () => handleJoinRoom(room.id) : undefined}
                 >
                   <div className="lobby-room-top">
-                    <span className="lobby-room-type">{GAME_TYPE_LABELS[room.gameType]}</span>
+                    <span className="lobby-room-type">{gameName(room.gameType, edition)}</span>
                     <span className={`lobby-room-status lobby-room-status-${isPlaying ? 'playing' : isFull ? 'full' : 'open'}`}>
                       {statusLabel}
                     </span>

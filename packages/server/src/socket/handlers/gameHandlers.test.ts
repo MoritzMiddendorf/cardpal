@@ -22,6 +22,7 @@ function makeRoom(overrides: Partial<Room> = {}): Room {
       { id: 'owner-token', username: 'Alice', isConnected: true },
       { id: 'player-2', username: 'Bob', isConnected: true },
     ],
+    edition: 'original',
     ...overrides,
   };
 }
@@ -92,7 +93,7 @@ describe('handleChangeGameType', () => {
     expect(io._emitFor('room-1')).toHaveBeenCalledWith('roomState', expect.objectContaining({ gameType: 'skipbo' }));
 
     // Should broadcast lobbyState
-    expect(io.emit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
+    expect(io._emitFor('edition:original')).toHaveBeenCalledWith('lobbyState', expect.any(Object));
   });
 
   it('emits VALIDATION_ERROR when not in a room', () => {
@@ -225,7 +226,7 @@ describe('handleStartGame', () => {
     expect(io._emitFor('room-1')).toHaveBeenCalledWith('roomState', expect.objectContaining({ status: 'playing' }));
 
     // Should broadcast lobbyState
-    expect(io.emit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
+    expect(io._emitFor('edition:original')).toHaveBeenCalledWith('lobbyState', expect.any(Object));
   });
 
   it('emits VALIDATION_ERROR when not in a room', () => {
@@ -405,7 +406,7 @@ describe('handleEndGame', () => {
     expect(io._emitFor('room-1')).toHaveBeenCalledWith('gameState', null);
 
     // Should broadcast lobbyState
-    expect(io.emit).toHaveBeenCalledWith('lobbyState', expect.any(Object));
+    expect(io._emitFor('edition:original')).toHaveBeenCalledWith('lobbyState', expect.any(Object));
   });
 });
 

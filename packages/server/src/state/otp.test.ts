@@ -39,10 +39,15 @@ describe('OTP State Management', () => {
       expect(state?.code).toBe('NEW-OTP');
     });
 
+    it('gives every OTP generation a new id', () => {
+      expect(setOtp('A7X-K9M').id).not.toBe(setOtp('A7X-K9M').id);
+    });
+
     it('returns the new OTP state', () => {
       const result = setOtp('A7X-K9M');
 
       expect(result).toEqual({
+        id: expect.any(String),
         code: 'A7X-K9M',
         expiresAt: expect.any(Date),
         createdAt: expect.any(Date),

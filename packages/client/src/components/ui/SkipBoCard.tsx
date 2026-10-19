@@ -1,5 +1,7 @@
 import type { PointerEventHandler } from 'react';
 import type { SkipBoCard as SkipBoCardType } from '@cardpal/shared';
+import { useAppStore } from '../../store/index.js';
+import { wildCardLabel } from '../../utils/editions.js';
 import './SkipBoCard.css';
 
 interface SkipBoCardProps {
@@ -20,6 +22,7 @@ function getCardColorClass(value: number, isWild: boolean): string {
 }
 
 export function SkipBoCard({ card, highlighted, selected, className, onClick, onPointerDown }: SkipBoCardProps) {
+  const edition = useAppStore((s) => s.edition);
   const variant = !card
     ? 'skipbo-card-empty'
     : !card.faceUp
@@ -27,6 +30,7 @@ export function SkipBoCard({ card, highlighted, selected, className, onClick, on
       : `skipbo-card-face ${getCardColorClass(card.value, card.isWild)}`;
   const classes = [
     'skipbo-card',
+    edition === 'original' ? '' : 'skipbo-card-neutral',
     variant,
     highlighted ? 'skipbo-card-highlighted' : '',
     selected && card ? 'skipbo-card-selected' : '',
@@ -36,10 +40,7 @@ export function SkipBoCard({ card, highlighted, selected, className, onClick, on
   return (
     <div className={classes} onClick={onClick} onPointerDown={onPointerDown}>
       {card?.faceUp && (card.isWild ? (
-        <>
-          <span className="skipbo-card-label">SKIP</span>
-          <span className="skipbo-card-label">BO</span>
-        </>
+        wildCardLabel(edition).map((line) => <span key={line} className="skipbo-card-label">{line}</span>)
       ) : (
         <span className="skipbo-card-value">{card.value}</span>
       ))}

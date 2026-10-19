@@ -18,16 +18,41 @@ the top of the log when a decision changes; keep "Current status" up to date.
 - 2026-10-08 readiness review: ready for the first try-out; nothing blocks it in the code. See D10 for deploys.
 - Dependabot opens weekly npm PRs and monthly actions/Docker PRs.
 - 2026-10-16: Epic 6 started on the owner's request: story 6.1 adds card drag & drop and the deck fly-in (D12).
+- 2026-10-19: Epic 7 (legal layer) started: story 7.1 splits OTP players from everyone else on the server and adds a
+  neutral edition (D13). The site is now **blank without the OTP**; friends use the secret entry path.
 
 ### Open items, in rough priority
 
-1. Owner action: set the GitHub repo variable `CARDPAL_URL` to the public URL so the deploy check runs (D10).
+1. Owner action: set `OTP_ENTRY_PATH` on Northflank to a path only friends know (the default `/table` is in this
+   public repo), and set the GitHub repo variable `CARDPAL_URL` to the public URL so the deploy check runs (D10).
 2. First try-out, then fix whatever real usage reveals ("UI polish based on real usage" in the PRD).
 3. Skip-Bo plays still have no movement animation for *other* players (FR38): an opponent's played card just appears on
    the building pile. Your own moves are dragged (D12) and every draw flies in from the deck. Candidate follow-up story.
 4. Post-MVP per PRD: Lovecraft Letter (third game).
+5. Before switching `PUBLIC_ACCESS` on (D13): Impressum/privacy pages, and decide whether OTP rotation should still sign
+   out public players (today it revokes every session).
 
 ## Decisions
+
+### D13 — Legal layer: OTP access tier and neutral edition (story 7.1) · 2026-10-19
+
+- **Decision:** Two server-enforced access tiers. Players who entered the OTP get the `original` edition (Skip-Bo, its
+  card labels); everyone else would get the `neutral` edition: Skip-Bo is shown as **"Twelve Up"**, the wild card shows a
+  star instead of "SKIP BO", and number cards use a different color scheme. Blackjack is a generic name and stays.
+  Rooms belong to their creator's edition; each edition only sees and can join its own rooms (joining another edition's
+  room answers `ROOM_NOT_FOUND`). The UI never mentions editions.
+- **Private for now:** the service is not public yet (no Impressum). Without OTP access every page is blank (no redirect,
+  no app bundle). The OTP form only exists at the secret `OTP_ENTRY_PATH` (default `/table`, set your own on deploys).
+  The path is never in the client bundle: the server injects `<meta name="cardpal-entry">` when it serves that page.
+  `PUBLIC_ACCESS=true` (off by default) opens `/` to everyone with the neutral edition; it is the switch for later.
+- **Enforcement:** a valid OTP sets an httpOnly `SameSite=Lax` (Lax so links shared in chat apps work) cookie with an
+  HS256 JWT bound to the OTP generation id and expiring with it. The signing key is random per process (state is in
+  memory anyway, D10). The socket handshake reads the cookie and creates the pending session with its edition; the
+  `pendingSessionId` HTTP round-trip is gone. The edition is stored on the session at username time and can't be chosen
+  by the client. OTP rotation still revokes everything (D3), cookies included. Hand-rolled JWT/cookie parsing: no new
+  dependency.
+- **Known limit:** the client bundle contains both editions' strings ("Skip-Bo" is in the JS, never rendered for
+  neutral sessions). Move names server-side if that ever matters legally.
 
 ### D12 — Drag & drop and deck fly-in (story 6.1) · 2026-10-16
 

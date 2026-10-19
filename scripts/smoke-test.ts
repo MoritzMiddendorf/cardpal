@@ -1,6 +1,7 @@
 // End-to-end smoke test against the real built server: boots `packages/server/dist`,
-// then drives two socket.io clients through OTP -> lobby -> room -> Blackjack round,
-// a disconnect/reconnect, a host kick and an OTP rotation.
+// then checks the private-app gate (blank page, secret OTP entry page, signed access cookie) and
+// drives two socket.io clients through OTP -> lobby -> room -> Blackjack round, a
+// disconnect/reconnect, a host kick and an OTP rotation.
 //
 //   pnpm build && pnpm smoke-test
 //
@@ -36,8 +37,10 @@ function check(condition: unknown, message: string): void {
 type Client = Socket & { received: Array<[string, ...unknown[]]> };
 const last = (c: Client, event: string): any => [...c.received].reverse().find((e) => e[0] === event)?.[1];
 
-function connect(auth: Record<string, string>): Client {
-  const socket = io(BASE, { transports: ['websocket'], auth, reconnection: false }) as Client;
+function connect(auth: Record<string, string>, cookie?: string): Client {
+  const socket = io(BASE, {
+    transports: ['websocket'], auth, reconnection: false, extraHeaders: cookie ? { cookie } : {},
+  }) as Client;
   socket.received = [];
   socket.onAny((event: string, ...args: unknown[]) => socket.received.push([event, ...args]));
   return socket;
@@ -47,14 +50,33 @@ async function generateOtp(secret = ADMIN_SECRET): Promise<Response> {
   return fetch(`${BASE}/api/admin/generate-otp`, { method: 'POST', headers: { Authorization: `Bearer ${secret}` } });
 }
 
-async function joinAs(code: string, username: string): Promise<Client> {
+/** Enter the OTP like the browser does; returns the access cookie (`name=value`) the server set. */
+async function enterOtp(code: string): Promise<string> {
   const res = await fetch(`${BASE}/api/validate-otp`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ code }),
   });
-  const { pendingSessionId } = (await res.json()) as { pendingSessionId: string };
-  const socket = connect({ pendingSessionId });
+  const setCookie = res.headers.getSetCookie().find((c) => c.startsWith('cardpal_access='));
+  check(res.ok && /HttpOnly/i.test(setCookie ?? ''), 'valid OTP sets an httpOnly access cookie');
+  return (setCookie ?? '').split(';')[0]!;
+}
+
+async function getPage(path: string, cookie?: string): Promise<string> {
+  const res = await fetch(`${BASE}${path}`, { headers: cookie ? { cookie } : {}, redirect: 'manual' });
+  return res.status >= 300 && res.status < 400 ? `redirect:${res.headers.get('location')}` : res.text();
+}
+
+async function connectError(socket: Client): Promise<string | null> {
+  return new Promise((r) => {
+    socket.on('connect', () => r(null));
+    socket.on('connect_error', (err: Error) => r(err.message));
+  });
+}
+
+async function joinAs(code: string, username: string): Promise<Client> {
+  const cookie = await enterOtp(code);
+  const socket = connect({}, cookie);
   await new Promise((r) => socket.on('connect', () => r(undefined)));
   socket.emit('setUsername', { username });
   await sleep(150);
@@ -69,12 +91,21 @@ async function main(): Promise<void> {
     await sleep(100);
   }
 
-  const index = await fetch(`${BASE}/`);
-  check(index.ok && (await index.text()).includes('<div id="root">'), 'client app is served');
-
   check((await generateOtp('wrong')).status === 401, 'admin endpoint rejects a wrong secret');
-  const { code } = (await (await generateOtp()).json()) as { code: string };
+  const { code, entryPath } = (await (await generateOtp()).json()) as { code: string; entryPath: string };
   check(/^[A-Z0-9]{3}-[A-Z0-9]{3}$/.test(code), 'OTP generated with admin secret');
+
+  // The private app shows nothing to strangers; the OTP form only lives at the secret entry path
+  const strangerPage = await getPage('/');
+  check(!strangerPage.includes('id="root"') && !strangerPage.includes('<script'), 'default page is blank without OTP access');
+  const entryPage = await getPage(entryPath);
+  check(entryPage.includes('id="root"') && entryPage.includes('cardpal-entry'), 'client app is served at the entry path');
+  check(!entryPage.includes(entryPath), 'entry page does not reveal its own path');
+  check(await connectError(connect({}, 'cardpal_access=forged.token.value')) === 'AUTH_ERROR', 'forged access cookie is rejected');
+
+  const cookie = await enterOtp(code);
+  check((await getPage('/', cookie)).includes('id="root"'), 'client app is served with OTP access');
+  check((await getPage(entryPath, cookie)) === 'redirect:/', 'entry path sends OTP users to the main page');
 
   const alice = await joinAs(code, 'Alice');
   const bob = await joinAs(code, 'Bob');
@@ -122,6 +153,7 @@ async function main(): Promise<void> {
   await generateOtp();
   await sleep(300);
   check(!alice.connected && last(alice, 'error')?.code === 'AUTH_ERROR', 'OTP rotation revokes sessions');
+  check(!(await getPage('/', cookie)).includes('id="root"'), 'OTP rotation revokes the access cookie');
 }
 
 try {

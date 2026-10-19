@@ -41,7 +41,7 @@ describe('handleKickPlayer', () => {
     const alice = newSession('Alice', 'socket-a');
     const bob = newSession('Bob', 'socket-b');
     _addRoomForTest({
-      id: 'room-1', name: 'Brave-Fox', gameType: GameType.BLACKJACK, status, ownerId: alice.playerId,
+      id: 'room-1', name: 'Brave-Fox', gameType: GameType.BLACKJACK, status, ownerId: alice.playerId, edition: 'original',
       players: [
         { id: alice.playerId, username: 'Alice', isConnected: true },
         { id: bob.playerId, username: 'Bob', isConnected: bobConnected },

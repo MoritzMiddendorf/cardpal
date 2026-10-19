@@ -4,12 +4,8 @@ import { socket } from '../../socket/client.js';
 import { GameType } from '@cardpal/shared';
 import type { PlayerInfo } from '@cardpal/shared';
 import { TopBar } from '../ui/TopBar.js';
+import { gameName } from '../../utils/editions.js';
 import './RoomScreen.css';
-
-const GAME_TYPE_LABELS: Record<GameType, string> = {
-  [GameType.BLACKJACK]: 'Blackjack',
-  [GameType.SKIPBO]: 'Skip-Bo',
-};
 
 const GAME_MIN_PLAYERS: Record<GameType, number> = {
   [GameType.BLACKJACK]: 2,
@@ -24,6 +20,7 @@ const GAME_MAX_PLAYERS: Record<GameType, number> = {
 export function RoomScreen() {
   const currentRoom = useAppStore((s) => s.currentRoom);
   const playerId = useAppStore((s) => s.playerId);
+  const edition = useAppStore((s) => s.edition);
   const [isLeaving, setIsLeaving] = useState(false);
 
   if (!currentRoom) return null;
@@ -59,12 +56,12 @@ export function RoomScreen() {
   const countHint = playerCount < minPlayers
     ? `Waiting for ${minPlayers - playerCount} more player${minPlayers - playerCount === 1 ? '' : 's'}`
     : playerCount > maxPlayers
-      ? `Too many players for ${GAME_TYPE_LABELS[currentRoom.gameType]} (max ${maxPlayers})`
+      ? `Too many players for ${gameName(currentRoom.gameType, edition)} (max ${maxPlayers})`
       : 'Ready to start';
 
   return (
     <div className="room-screen app-page">
-      <TopBar context={`${currentRoom.name} · ${GAME_TYPE_LABELS[currentRoom.gameType]}`} />
+      <TopBar context={`${currentRoom.name} · ${gameName(currentRoom.gameType, edition)}`} />
 
       <main className="app-main room-layout">
         <section className="room-players app-panel">
@@ -114,11 +111,11 @@ export function RoomScreen() {
               onChange={(e) => handleChangeGameType(e.target.value as GameType)}
             >
               {Object.values(GameType).map((gt) => (
-                <option key={gt} value={gt}>{GAME_TYPE_LABELS[gt]}</option>
+                <option key={gt} value={gt}>{gameName(gt, edition)}</option>
               ))}
             </select>
           ) : (
-            <span className="room-game-type">{GAME_TYPE_LABELS[currentRoom.gameType]}</span>
+            <span className="room-game-type">{gameName(currentRoom.gameType, edition)}</span>
           )}
           <p className="room-game-range">{minPlayers}–{maxPlayers} players</p>
           <p className={`room-count-hint ${isValidCount ? 'room-player-count-valid' : 'room-player-count-invalid'}`}>

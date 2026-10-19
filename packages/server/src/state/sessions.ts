@@ -1,7 +1,11 @@
+import type { Edition } from '@cardpal/shared';
+
 export interface PendingSession {
   id: string;
   validatedAt: Date;
-  otpCode: string;  // the OTP code that was validated to create this session
+  /** The OTP code this visitor proved to know, or null for a public (neutral edition) visitor. */
+  otpCode: string | null;
+  edition: Edition;
 }
 
 export interface UserSession {
@@ -12,7 +16,10 @@ export interface UserSession {
   username: string;
   socketId: string;
   roomId: string | null;
-  otpCode: string;
+  /** OTP the session was created under (original edition); null for public sessions. */
+  otpCode: string | null;
+  /** Fixed at creation from the server-verified access tier; decides which rooms the player sees. */
+  edition: Edition;
 }
 
 export const PENDING_SESSION_TTL_MS = 10 * 60 * 1000; // 10 minutes
@@ -22,9 +29,10 @@ const sessions = new Map<string, UserSession>();
 
 // --- Pending Sessions (Story 1.3) ---
 
-export function createPendingSession(otpCode: string): PendingSession {
+export function createPendingSession(otpCode: string | null): PendingSession {
   const id = crypto.randomUUID();
-  const session: PendingSession = { id, validatedAt: new Date(), otpCode };
+  const edition: Edition = otpCode === null ? 'neutral' : 'original';
+  const session: PendingSession = { id, validatedAt: new Date(), otpCode, edition };
   pendingSessions.set(id, session);
   return { ...session };
 }
@@ -63,7 +71,9 @@ export function createSession(
 
   const token = crypto.randomUUID();
   const playerId = crypto.randomUUID();
-  const session: UserSession = { token, playerId, username, socketId, roomId: null, otpCode: pending.otpCode };  // M3: use stored OTP code
+  const session: UserSession = {
+    token, playerId, username, socketId, roomId: null, otpCode: pending.otpCode, edition: pending.edition,
+  };
   sessions.set(token, session);
   return { ...session };
 }

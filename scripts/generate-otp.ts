@@ -27,15 +27,16 @@ try {
     process.exit(1);
   }
 
-  const data = (await response.json()) as { code: string; expiresAt: string };
+  const data = (await response.json()) as { code: string; expiresAt: string; entryPath?: string };
 
   console.log();
   console.log('OTP generated successfully!');
   console.log();
   console.log(`  Code: ${data.code}`);
   console.log(`  Expires: ${data.expiresAt}`);
+  if (data.entryPath) console.log(`  Link:    ${baseUrl}${data.entryPath}`);
   console.log();
-  console.log('Share this code with your friends to grant access.');
+  console.log('Share the link and the code with your friends (only with them: the link is not public).');
   console.log();
 } catch (error: unknown) {
   if (error instanceof TypeError && (error as NodeJS.ErrnoException).cause) {

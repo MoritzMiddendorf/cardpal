@@ -7,34 +7,39 @@ import { LobbyScreen } from './components/screens/LobbyScreen.js';
 import { RoomScreen } from './components/screens/RoomScreen.js';
 import { GameScreen } from './components/screens/GameScreen.js';
 import { ConnectionOverlay } from './components/ui/ConnectionOverlay.js';
-import type { RoomInfo, RoomState, FilteredGameState, ErrorPayload } from '@cardpal/shared';
+import type { Edition, RoomInfo, RoomState, FilteredGameState, ErrorPayload } from '@cardpal/shared';
+import { fetchAccess, isEntryPage } from './utils/access.js';
+import { startNewSession } from './socket/session.js';
+
+/** First screen for a visitor without a session: OTP form, username, or nothing at all. */
+async function showEntryScreen(): Promise<void> {
+  const edition = await fetchAccess();
+  // The entry page is for entering the OTP, even when the app is public
+  if (isEntryPage() && edition !== 'original') useAppStore.getState().setScreen('otp');
+  else if (edition) startNewSession();
+  else useAppStore.getState().setScreen('blank');
+}
 
 export function App() {
   const screen = useAppStore((s) => s.screen);
-  const pendingSessionId = useAppStore((s) => s.pendingSessionId);
 
-  // Auto-connect returning users with existing session token
+  // Returning users reconnect with their session token; everyone else gets the entry screen
   useEffect(() => {
     const token = useAppStore.getState().sessionToken;
     if (token) {
       socket.auth = { token };
       socket.connect();
+    } else {
+      void showEntryScreen();
     }
   }, []);
 
-  // Connect new users after OTP validation
-  useEffect(() => {
-    if (pendingSessionId && !socket.connected) {
-      socket.auth = { pendingSessionId };
-      socket.connect();
-    }
-  }, [pendingSessionId]);
-
   // Global socket event listeners
   useEffect(() => {
-    function onAuthenticated({ token, playerId, username, roomId }: { token: string; playerId: string; username: string; roomId?: string }) {
+    function onAuthenticated({ token, playerId, username, edition, roomId }: { token: string; playerId: string; username: string; edition: Edition; roomId?: string }) {
       const store = useAppStore.getState();
       store.setSessionToken(token);
+      store.setEdition(edition);
       store.setPlayerId(playerId);
       store.setUsername(username);
       store.setConnectionStatus('connected');
@@ -51,29 +56,44 @@ export function App() {
       }
     }
 
-    function resetToOtpScreen(message: string) {
+    /**
+     * The session (or the access behind it) is gone. Players who still have access start a new
+     * session; OTP players whose code was rotated see the OTP form again (they know about it
+     * already). Anyone else gets nothing: the private app never shows itself to strangers.
+     */
+    async function handleAccessLost(message: string) {
       socket.disconnect(); // stop reconnection attempts with stale auth
       const store = useAppStore.getState();
+      const wasOtpPlayer = store.edition === 'original';
       store.setSessionToken(null);
       store.setPlayerId(null);
-      store.setPendingSessionId(null);
+      store.setEdition(null);
       store.setCurrentRoom(null);
       store.setGameState(null);
       store.setReconnectFailed(false);
-      store.setScreen('otp');
-      store.setErrorMessage(message);
+      store.setScreen('blank');
+
+      const edition = await fetchAccess();
+      if ((wasOtpPlayer || isEntryPage()) && edition !== 'original') {
+        store.setScreen('otp');
+        store.setErrorMessage(message);
+      } else if (edition) {
+        startNewSession();
+      }
     }
 
     function onConnectError(err: Error) {
       if (err.message === 'AUTH_ERROR') {
-        resetToOtpScreen('Session expired — please enter a new OTP');
+        void handleAccessLost('Session expired — please enter a new code');
       }
     }
 
     // The server revokes all sessions when the OTP is rotated or expires
     function onError(err: ErrorPayload) {
-      if (err.code === 'AUTH_ERROR' && useAppStore.getState().sessionToken) {
-        resetToOtpScreen(err.message);
+      const { sessionToken, screen } = useAppStore.getState();
+      // Also while picking a username: the pending session expired or access was revoked
+      if (err.code === 'AUTH_ERROR' && (sessionToken || screen === 'username')) {
+        void handleAccessLost(err.message);
       }
     }
 

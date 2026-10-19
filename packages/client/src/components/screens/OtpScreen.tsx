@@ -1,5 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAppStore } from '../../store/index.js';
+import { startNewSession } from '../../socket/session.js';
+import { leaveEntryPath } from '../../utils/access.js';
 import './OtpScreen.css';
 
 const OTP_REGEX = /^[A-Z0-9]{3}-[A-Z0-9]{3}$/;
@@ -44,8 +46,10 @@ export function OtpScreen() {
     setErrorMessage('');
 
     try {
+      // On success the server sets an httpOnly access cookie; the socket handshake reads it
       const response = await fetch('/api/validate-otp', {
         method: 'POST',
+        credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ code: inputValue }),
       });
@@ -53,8 +57,8 @@ export function OtpScreen() {
       const data = await response.json();
 
       if (response.ok) {
-        useAppStore.getState().setPendingSessionId(data.pendingSessionId);
-        useAppStore.getState().setScreen('username');
+        leaveEntryPath();
+        startNewSession();
       } else {
         setErrorMessage(data.message || 'Validation failed');
       }

@@ -86,3 +86,8 @@ development_status:
   epic-6: in-progress
   6-1-card-drag-drop-and-draw-fly-in: done
   epic-6-retrospective: optional
+
+  # Epic 7: Legal Layer (added 2026-10-19, see decision log D13)
+  epic-7: in-progress
+  7-1-otp-access-tier-and-neutral-game-edition: review
+  epic-7-retrospective: optional

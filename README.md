@@ -16,7 +16,8 @@ pnpm dev            # client on :5173, server on :3001
 pnpm generate-otp   # in a second terminal: prints the access code
 ```
 
-Open http://localhost:5173, enter the code, pick a username.
+Open http://localhost:5173/table, enter the code, pick a username. The plain http://localhost:5173 stays blank
+until you have entered a code (see *Access* below).
 
 Checks (the same ones CI runs on every push):
 
@@ -43,7 +44,8 @@ Recommended: **Northflank** free Developer Sandbox — always-on (no sleeping), 
 
 1. Create a **combined service** from this repo, branch `main`, build type *Dockerfile* (path `/Dockerfile`, context `/`).
 2. Networking: port `3001`, protocol HTTP, **public**.
-3. Environment: add `ADMIN_SECRET` (long random string) as a runtime variable.
+3. Environment: add `ADMIN_SECRET` (long random string) and `OTP_ENTRY_PATH` (a path only your friends know,
+   e.g. `/some-secret-word`) as runtime variables.
 4. Health check (optional): HTTP `GET /api/health` on port `3001`.
 5. Keep **CI** and **CD** enabled: every push to `main` is built and deployed automatically.
 
@@ -60,6 +62,8 @@ Fallback: **Render** free web service (also from the `Dockerfile`). It sleeps af
 | `ADMIN_SECRET` | unset | **Required when deployed.** Bearer secret for OTP generation. Without it, OTPs can only be generated from localhost. |
 | `GIT_SHA` | unset | Commit reported by `/api/health`; on Northflank `NF_DEPLOYMENT_SHA` is used automatically |
 | `OTP_VALIDITY_HOURS` | `12` | How long an access code (and every session created with it) stays valid |
+| `OTP_ENTRY_PATH` | `/table` | Secret page with the code form. **Set your own when deployed** (the default is public in this repo). |
+| `PUBLIC_ACCESS` | unset | `true` lets visitors without a code play the neutral edition. Leave off until Impressum etc. exist. |
 
 Generate a code against a deployed server:
 
@@ -67,4 +71,13 @@ Generate a code against a deployed server:
 CARDPAL_URL=https://your-host ADMIN_SECRET=... pnpm generate-otp
 ```
 
-Generating a new code invalidates the previous one and signs everybody out. All state is in memory; a restart is a clean slate.
+It prints the code and the link to the entry page. Generating a new code invalidates the previous one and signs
+everybody out. All state is in memory; a restart is a clean slate.
+
+### Access
+
+- Without a code the site is blank: every page except the entry path returns an empty page, with no redirect.
+- The entry path (`OTP_ENTRY_PATH`) shows the code form. A correct code sets a signed, httpOnly cookie bound to that
+  code, and the browser continues to the main page. Players with the cookie see the original game names (Skip-Bo).
+- With `PUBLIC_ACCESS=true`, visitors without a code can play too, but only in their own lobby and with neutral names
+  and card designs (Skip-Bo is called *Twelve Up*). The UI never mentions the difference. See decision log D13.
