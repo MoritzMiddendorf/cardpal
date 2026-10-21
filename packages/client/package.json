@@ -12,8 +12,8 @@
   },
   "dependencies": {
     "@cardpal/shared": "workspace:*",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
     "socket.io-client": "^4.8.4",
     "zustand": "^5.0.15"
   },
@@ -22,7 +22,7 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "typescript": "~7.0.2",
-    "vite": "^8.3.3",
-    "vitest": "^5.0.3"
+    "vite": "^8.3.4",
+    "vitest": "^5.0.5"
   }
 }
