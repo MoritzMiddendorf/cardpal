@@ -1,5 +1,5 @@
 # Production image: builds all packages, then runs the server, which also serves the client.
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
@@ -12,7 +12,7 @@ RUN pnpm build \
  && pnpm --filter @cardpal/server deploy --prod --legacy /out \
  && mkdir -p /out/client && cp -r packages/client/dist /out/client/dist
 
-FROM node:24-alpine
+FROM node:26-alpine
 ENV NODE_ENV=production PORT=3001
 WORKDIR /app/server
 COPY --from=build /out /app/server
