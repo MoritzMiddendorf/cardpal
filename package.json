@@ -18,7 +18,7 @@
     ]
   },
   "devDependencies": {
-    "concurrently": "^10.0.5",
+    "concurrently": "^10.0.6",
     "socket.io-client": "^4.8.4",
     "tsx": "^4.23.15",
     "typescript": "~7.0.2"
